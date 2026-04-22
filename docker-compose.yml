@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: recruitment-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: recruitment_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - recruitment-network
+
+  # Caching & Message Queue
+  redis:
+    image: redis:7-alpine
+    container_name: recruitment-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - recruitment-network
+
+  # Object Storage (MinIO)
+  minio:
+    image: minio/minio
+    container_name: recruitment-minio
+    ports:
+      - "9000:9000" # API
+      - "9001:9001" # Console (UI)
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadminpassword
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - recruitment-network
+
+networks:
+  recruitment-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
