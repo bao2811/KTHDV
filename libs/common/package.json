@@ -1,0 +1,15 @@
+{
+  "name": "@recruitment/common",
+  "version": "1.0.0",
+  "description": "Common library for recruitment system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "class-validator": "^0.14.0",
+    "class-transformer": "^0.5.1"
+  }
+}
