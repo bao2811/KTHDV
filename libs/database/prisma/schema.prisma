@@ -7,50 +7,454 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ===========================
+// F6 — Core / Auth
+// ===========================
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  name        String           @unique // Admin, Manager, HR, Candidate
+  description String?
+  permissions RolePermission[]
+  users       User[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Permission {
+  id       Int              @id @default(autoincrement())
+  resource String // jobs, applications, users, candidates, interviews, reports
+  action   String // create, read, update, delete
+  roles    RolePermission[]
+
+  @@unique([resource, action])
+}
+
+model RolePermission {
+  id           Int        @id @default(autoincrement())
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId Int
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String   // ADMIN, MANAGER, HR, CANDIDATE
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  profile   Profile?
+  id           Int        @id @default(autoincrement())
+  email        String     @unique
+  password     String? // nullable for OAuth users
+  roleId       Int
+  role         Role       @relation(fields: [roleId], references: [id])
+  status       UserStatus @default(ACTIVE)
+  provider     String     @default("local") // local, google
+  providerId   String? // OAuth provider user ID
+  refreshToken String? // hashed refresh token
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  profile      Profile?
+  candidateProfile CandidateProfile?
+  auditLogs    AuditLog[]
+  createdJobs  Job[]         @relation("JobCreatedBy")
+  jobApprovals JobApproval[] @relation("JobApprovalReviewer")
+  applications Application[] @relation("ApplicationCandidate")
+  resumes      Resume[]
+  availabilitySlots AvailabilitySlot[]
+  interviews   Interview[]   @relation("InterviewInterviewer")
+
+  @@index([roleId])
+  @@index([provider, providerId])
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
-  fullName    String
-  phone       String?
-  experience  Json?    // Work experience
-  education   Json?    // Education history
-  cvUrl       String?
+  id         Int      @id @default(autoincrement())
+  userId     Int      @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName   String
+  phone      String?
+  experience Json? // Work experience
+  education  Json? // Education history
+  cvUrl      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model PipelineStage {
+  id    Int    @id @default(autoincrement())
+  name  String @unique // Submitted, Screening, Matched, Interviewing, Offered
+  order Int    @unique
+  color String // hex color code
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action     String // CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT, REGISTER
+  resource   String // users, jobs, applications, auth...
+  resourceId Int?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+
+  @@index([userId])
+  @@index([resource, resourceId])
+  @@index([timestamp])
+}
+
+// ===========================
+// F1 — Job Service
+// ===========================
+
+enum JobStatus {
+  DRAFT
+  PENDING
+  ACTIVE
+  CLOSED
+  EXPIRED
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  REMOTE
+}
+
+enum SkillLevel {
+  REQUIRED
+  NICE_TO_HAVE
+}
+
+enum ApprovalStatus {
+  APPROVED
+  REJECTED
+}
+
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String
+  logoUrl     String?
+  industry    String?
+  size        String?
+  website     String?
+  description String?
+  jobs        Job[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  city      String
+  district  String?
+  address   String?
+  jobs      Job[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model JobCategory {
+  id        Int           @id @default(autoincrement())
+  name      String
+  parentId  Int?
+  parent    JobCategory?  @relation("JobCategoryParent", fields: [parentId], references: [id])
+  children  JobCategory[] @relation("JobCategoryParent")
+  jobs      Job[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model Skill {
+  id        Int        @id @default(autoincrement())
+  name      String     @unique
+  category  String?
+  jobSkills JobSkill[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model Job {
-  id          String   @id @default(uuid())
-  title       String
-  description String
-  requirements String
-  salaryRange String?
-  location    String?
-  status      String   // PENDING, APPROVED, CLOSED
-  authorId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  applications Application[]
+  id              Int          @id @default(autoincrement())
+  companyId       Int?
+  company         Company?     @relation(fields: [companyId], references: [id])
+  categoryId      Int?
+  category        JobCategory? @relation(fields: [categoryId], references: [id])
+  locationId      Int?
+  location        Location?    @relation(fields: [locationId], references: [id])
+  title           String
+  description     String
+  salaryMin       Decimal?     @db.Decimal(15, 2)
+  salaryMax       Decimal?     @db.Decimal(15, 2)
+  experienceYears Int          @default(0)
+  jobType         JobType?
+  status          JobStatus    @default(DRAFT)
+  createdByUserId Int?
+  createdBy       User?        @relation("JobCreatedBy", fields: [createdByUserId], references: [id])
+  publishedAt     DateTime?
+  expiredAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  jobSkills       JobSkill[]
+  approvals       JobApproval[]
+  applications    Application[]
+  hardFilters     HardFilter[]
+
+  @@index([companyId])
+  @@index([categoryId])
+  @@index([locationId])
+  @@index([status])
+}
+
+model JobSkill {
+  jobId    Int
+  skillId  Int
+  level    SkillLevel
+  minYears Int    @default(0)
+  job      Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill    Skill  @relation(fields: [skillId], references: [id])
+
+  @@id([jobId, skillId])
+}
+
+model JobApproval {
+  id         Int            @id @default(autoincrement())
+  jobId      Int
+  reviewerId Int
+  reviewer   User           @relation("JobApprovalReviewer", fields: [reviewerId], references: [id])
+  status     ApprovalStatus
+  comment    String?
+  reviewedAt DateTime       @default(now())
+  job        Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([reviewerId])
+}
+
+// ===========================
+// F2 — Candidate Service
+// ===========================
+
+enum ApplicationStatus {
+  SUBMITTED
+  MATCHED
+  INTERVIEWING
+  OFFERED
+  REJECTED
+}
+
+enum ResumeFileType {
+  PDF
+  DOCX
+}
+
+model CandidateProfile {
+  id          Int             @id @default(autoincrement())
+  userId      Int             @unique
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName    String
+  phone       String?
+  dateOfBirth DateTime?
+  address     String?
+  summary     String?
+  experiences WorkExperience[]
+  educations  Education[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model WorkExperience {
+  id          Int              @id @default(autoincrement())
+  profileId   Int
+  companyName String?
+  position    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  profile     CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([profileId])
+}
+
+model Education {
+  id         Int              @id @default(autoincrement())
+  profileId  Int
+  schoolName String?
+  degree     String?
+  major      String?
+  startDate  DateTime?
+  endDate    DateTime?
+  profile    CandidateProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@index([profileId])
+}
+
+model Resume {
+  id         Int             @id @default(autoincrement())
+  userId     Int
+  user       User            @relation(fields: [userId], references: [id])
+  fileName   String?
+  fileUrl    String
+  fileType   ResumeFileType
+  isPrimary  Boolean         @default(false)
+  uploadedAt DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  apps       Application[]
+  referrers  Referrer[]
+
+  @@index([userId])
 }
 
 model Application {
-  id          String   @id @default(uuid())
-  jobId       String
-  job         Job      @relation(fields: [jobId], references: [id])
-  candidateId String
-  status      String   // APPLIED, MATCHED, INTERVIEWING, OFFERED, REJECTED
-  score       Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int               @id @default(autoincrement())
+  jobId       Int
+  job         Job               @relation(fields: [jobId], references: [id])
+  candidateId Int
+  candidate   User              @relation("ApplicationCandidate", fields: [candidateId], references: [id])
+  resumeId    Int
+  resume      Resume            @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  status      ApplicationStatus @default(SUBMITTED)
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  matchResult MatchResult?
+  interviews  Interview[]
+
+  @@index([jobId])
+  @@index([candidateId])
+  @@index([status])
+}
+
+// ===========================
+// F3 — Matching Service
+// ===========================
+
+enum FilterType {
+  EXPERIENCE
+  EDUCATION
+  SKILL
+}
+
+enum FilterOperator {
+  GTE
+  EQ
+  IN
+}
+
+model HardFilter {
+  id            Int            @id @default(autoincrement())
+  jobId         Int
+  job           Job            @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  filterType    FilterType
+  requiredValue String
+  operator      FilterOperator
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([jobId])
+}
+
+model MatchResult {
+  id               Int         @id @default(autoincrement())
+  applicationId    Int         @unique
+  application      Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  overallScore     Decimal?    @db.Decimal(5, 2)
+  passedHardFilter Boolean     @default(true)
+  matchDetails     Json?
+  processedAt      DateTime    @default(now())
+}
+
+// ===========================
+// F4 — Interview Service
+// ===========================
+
+enum InterviewType {
+  ONLINE
+  IN_PERSON
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model AvailabilitySlot {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  startTime DateTime
+  endTime   DateTime
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([startTime])
+}
+
+model Interview {
+  id              Int             @id @default(autoincrement())
+  applicationId   Int
+  application     Application     @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  interviewerId   Int
+  interviewer     User            @relation("InterviewInterviewer", fields: [interviewerId], references: [id])
+  scheduledAt     DateTime
+  durationMinutes Int             @default(60)
+  interviewType   InterviewType
+  meetingLink     String?
+  status          InterviewStatus @default(SCHEDULED)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([applicationId])
+  @@index([interviewerId])
+  @@index([status])
+}
+
+// ===========================
+// F5 — Referral Bot
+// ===========================
+
+enum ReferralStatus {
+  PENDING
+  VERIFIED
+  SUSPICIOUS
+  EXPIRED
+}
+
+model Referrer {
+  id           Int                   @id @default(autoincrement())
+  resumeId     Int
+  resume       Resume                @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  name         String?
+  email        String?
+  phone        String?
+  position     String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  verification ReferralVerification?
+
+  @@index([resumeId])
+}
+
+model ReferralVerification {
+  id           Int            @id @default(autoincrement())
+  referrerId   Int            @unique
+  referrer     Referrer       @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  token        String         @unique
+  status       ReferralStatus @default(PENDING)
+  sentAt       DateTime       @default(now())
+  respondedAt  DateTime?
+  responseData Json?
 }

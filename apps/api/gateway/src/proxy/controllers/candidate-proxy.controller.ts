@@ -1,0 +1,293 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  Body,
+  Query,
+  UseGuards,
+  UploadedFile,
+  UseInterceptors,
+  Request,
+  Inject,
+} from '@nestjs/common';
+import type { IServiceProxy } from '../interfaces/service-proxy.interface';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { SERVICE_PROXY } from '../proxy.constants';
+
+const CANDIDATE_SERVICE_URL =
+  process.env.CANDIDATE_SERVICE_URL || 'http://localhost:3001';
+
+const getAuthConfig = (req: any) => ({
+  headers: {
+    Authorization: req.headers.authorization,
+  },
+});
+
+@ApiTags('Candidates (via Proxy)')
+@Controller('candidates')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class CandidateProxyController {
+  constructor(@Inject(SERVICE_PROXY) private proxy: IServiceProxy) {}
+
+  // Profiles
+  @Post('profiles')
+  async createProfile(
+    @Request() req: any,
+    @Body() body: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles`,
+      {
+        ...body,
+        userId,
+      },
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('profiles')
+  async getProfiles(
+    @Request() req: any,
+    @Query('search') search?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const url = new URL(`${CANDIDATE_SERVICE_URL}/candidates/profiles`);
+    if (search) url.searchParams.append('search', search);
+    if (page) url.searchParams.append('page', page.toString());
+    if (limit) url.searchParams.append('limit', limit.toString());
+    return this.proxy.get(url.toString(), getAuthConfig(req));
+  }
+
+  @Get('profiles/user/:userId')
+  async getProfileByUserId(
+    @Request() req: any,
+    @Param('userId') userId: number,
+  ) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/user/${userId}`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('profiles/:id')
+  async getProfile(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${id}`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('profiles/:userId')
+  async updateProfile(
+    @Request() req: any,
+    @Param('userId') userId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.patch(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${userId}`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  // Experiences
+  @Post('profiles/:profileId/experiences')
+  async createExperience(
+    @Request() req: any,
+    @Param('profileId') profileId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${profileId}/experiences`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('profiles/:profileId/experiences')
+  async getExperiences(
+    @Request() req: any,
+    @Param('profileId') profileId: number,
+  ) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${profileId}/experiences`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('experiences/:id')
+  async updateExperience(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.patch(
+      `${CANDIDATE_SERVICE_URL}/candidates/experiences/${id}`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Delete('experiences/:id')
+  async deleteExperience(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.delete(
+      `${CANDIDATE_SERVICE_URL}/candidates/experiences/${id}`,
+      getAuthConfig(req),
+    );
+  }
+
+  // Educations
+  @Post('profiles/:profileId/educations')
+  async createEducation(
+    @Request() req: any,
+    @Param('profileId') profileId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${profileId}/educations`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('profiles/:profileId/educations')
+  async getEducations(
+    @Request() req: any,
+    @Param('profileId') profileId: number,
+  ) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/candidates/profiles/${profileId}/educations`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('educations/:id')
+  async updateEducation(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.patch(
+      `${CANDIDATE_SERVICE_URL}/candidates/educations/${id}`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Delete('educations/:id')
+  async deleteEducation(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.delete(
+      `${CANDIDATE_SERVICE_URL}/candidates/educations/${id}`,
+      getAuthConfig(req),
+    );
+  }
+
+  // Resumes (via file-upload service)
+  @Post('resumes')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadCV(
+    @Request() req: any,
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    // For file upload, would need special handling
+    // For now, forward to service endpoint
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/upload/cv`,
+      {
+        file,
+        userId,
+      },
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('resumes')
+  async getMyCVs(@Request() req: any, @CurrentUser('id') userId: number) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/upload/my-cvs`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('resumes/:id/primary')
+  async setPrimaryCV(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.patch(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/primary`,
+      {},
+      getAuthConfig(req),
+    );
+  }
+
+  @Delete('resumes/:id')
+  async deleteCV(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.delete(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/delete`,
+      getAuthConfig(req),
+    );
+  }
+
+  // Applications
+  @Post('applications')
+  async applyForJob(
+    @Request() req: any,
+    @Body() body: any,
+    @CurrentUser('id') candidateId: number,
+  ) {
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/applications/apply`,
+      {
+        ...body,
+        candidateId,
+      },
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('applications')
+  async getMyApplications(
+    @Request() req: any,
+    @Query('status') status?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    const url = new URL(`${CANDIDATE_SERVICE_URL}/applications/me`);
+    if (status) url.searchParams.append('status', status);
+    if (page) url.searchParams.append('page', page.toString());
+    if (limit) url.searchParams.append('limit', limit.toString());
+    return this.proxy.get(url.toString(), getAuthConfig(req));
+  }
+
+  @Get('applications/stats')
+  async getApplicationStats(@Request() req: any) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/applications/me/stats`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('applications/:id')
+  async getApplication(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/applications/${id}`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Delete('applications/:id')
+  async cancelApplication(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.delete(
+      `${CANDIDATE_SERVICE_URL}/applications/${id}`,
+      getAuthConfig(req),
+    );
+  }
+}
