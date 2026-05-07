@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CandidateProfile, WorkExperience, Education, Resume, Application } from '@prisma/client';
 
 @Injectable()
 export class CandidateService {
@@ -9,15 +10,17 @@ export class CandidateService {
   createProfile(data: {
     userId: number;
     fullName: string;
+    title?: string;
     phone?: string;
     dateOfBirth?: string;
     address?: string;
     summary?: string;
-  }) {
+  }): Promise<CandidateProfile> {
     return this.prisma.candidateProfile.create({
       data: {
         userId: data.userId,
         fullName: data.fullName,
+        title: data.title,
         phone: data.phone,
         address: data.address,
         summary: data.summary,
@@ -103,25 +106,32 @@ export class CandidateService {
     userId: number,
     data: Partial<{
       fullName: string;
+      title?: string;
       phone?: string;
       dateOfBirth?: string | null;
       address?: string;
       summary?: string;
     }>,
   ) {
-    await this.getProfileByUserId(userId);
-    return this.prisma.candidateProfile.update({
+    const updateData = {
+      fullName: data.fullName || 'User',
+      title: data.title,
+      phone: data.phone,
+      address: data.address,
+      summary: data.summary,
+      dateOfBirth: data.dateOfBirth
+        ? new Date(data.dateOfBirth)
+        : data.dateOfBirth === null
+          ? null
+          : undefined,
+    };
+
+    return this.prisma.candidateProfile.upsert({
       where: { userId },
-      data: {
-        fullName: data.fullName,
-        phone: data.phone,
-        address: data.address,
-        summary: data.summary,
-        dateOfBirth: data.dateOfBirth
-          ? new Date(data.dateOfBirth)
-          : data.dateOfBirth === null
-            ? null
-            : undefined,
+      update: updateData,
+      create: {
+        userId,
+        ...updateData,
       },
     });
   }
@@ -316,10 +326,16 @@ export class CandidateService {
     jobId: number;
     candidateId: number;
     resumeId: number;
-  }) {
+  }): Promise<Application> {
     return this.prisma.application.create({
-      data,
-      include: { job: true, resume: true, candidate: true },
+      data: {
+        jobId: data.jobId,
+        candidateId: data.candidateId,
+        resumeId: data.resumeId,
+      },
+      include: {
+        job: { select: { title: true, company: { select: { name: true } } } },
+      },
     });
   }
 
@@ -331,7 +347,7 @@ export class CandidateService {
       page?: number;
       limit?: number;
     } = {},
-  ) {
+  ): Promise<{ data: Application[]; pagination: any }> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
