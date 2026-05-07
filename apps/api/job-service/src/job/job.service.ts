@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { ApplicationStatus } from '@prisma/client';
+import { ApplicationStatus, Company, Job, Location, JobCategory, Skill, JobApproval, JobSkill, HardFilter } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -14,15 +14,15 @@ export class JobService {
     size?: string;
     website?: string;
     description?: string;
-  }) {
+  }): Promise<Company> {
     return this.prisma.company.create({ data });
   }
 
-  listCompanies() {
+  listCompanies(): Promise<Company[]> {
     return this.prisma.company.findMany({ orderBy: { id: 'asc' } });
   }
 
-  async getCompany(id: number) {
+  async getCompany(id: number): Promise<Company> {
     const company = await this.prisma.company.findUnique({ where: { id } });
     if (!company) {
       throw new NotFoundException('Company không tồn tại');
@@ -157,7 +157,7 @@ export class JobService {
     createdByUserId?: number;
     publishedAt?: string;
     expiredAt?: string;
-  }) {
+  }): Promise<Job> {
     return this.prisma.job.create({
       data: {
         ...data,
@@ -178,38 +178,29 @@ export class JobService {
     jobType?: 'FULL_TIME' | 'PART_TIME' | 'REMOTE';
     salaryMin?: number;
     salaryMax?: number;
-  }) {
+  }): Promise<{ data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.companyId) {
-      where.companyId = params.companyId;
-    }
-    if (params.categoryId) {
-      where.categoryId = params.categoryId;
-    }
-    if (params.locationId) {
-      where.locationId = params.locationId;
-    }
-    if (params.jobType) {
-      where.jobType = params.jobType;
-    }
-    if (params.salaryMin !== undefined) {
-      where.salaryMax = { gte: params.salaryMin };
-    }
-    if (params.salaryMax !== undefined) {
-      where.salaryMin = { lte: params.salaryMax };
-    }
+    const where: any = {
+      status: params.status || undefined,
+      companyId: params.companyId,
+      categoryId: params.categoryId,
+      locationId: params.locationId,
+      jobType: params.jobType,
+    };
+
     if (params.search) {
       where.OR = [
         { title: { contains: params.search, mode: 'insensitive' } },
         { description: { contains: params.search, mode: 'insensitive' } },
       ];
+    }
+
+    if (params.salaryMin !== undefined || params.salaryMax !== undefined) {
+      where.salaryMin = params.salaryMin !== undefined ? { gte: params.salaryMin } : undefined;
+      where.salaryMax = params.salaryMax !== undefined ? { lte: params.salaryMax } : undefined;
     }
 
     const [data, total] = await Promise.all([
@@ -220,9 +211,9 @@ export class JobService {
         orderBy: { createdAt: 'desc' },
         include: {
           company: true,
-          category: true,
           location: true,
-          _count: { select: { applications: true } },
+          category: true,
+          jobSkills: { include: { skill: true } },
         },
       }),
       this.prisma.job.count({ where }),
@@ -239,7 +230,7 @@ export class JobService {
     };
   }
 
-  async getJob(id: number) {
+  async getJob(id: number): Promise<Job> {
     const job = await this.prisma.job.findUnique({
       where: { id },
       include: {

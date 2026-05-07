@@ -12,11 +12,11 @@ import {
   Request,
 } from '@nestjs/common';
 import type { IServiceProxy } from '../interfaces/service-proxy.interface';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SERVICE_PROXY } from '../proxy.constants';
 
-const JOB_SERVICE_URL = process.env.JOB_SERVICE_URL || 'http://localhost:3005';
+const JOB_SERVICE_URL = process.env.JOB_SERVICE_URL || 'http://localhost:3002';
 
 const getAuthConfig = (req: any) => ({
   headers: {

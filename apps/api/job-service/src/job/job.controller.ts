@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JobService } from './job.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
@@ -22,11 +22,13 @@ export class JobController {
   constructor(private readonly jobService: JobService) {}
 
   // Companies
+  @ApiOperation({ summary: 'Tạo công ty mới' })
   @Post('companies')
   createCompany(@Body() body: any) {
     return this.jobService.createCompany(body);
   }
 
+  @ApiOperation({ summary: 'Danh sách công ty' })
   @Get('companies')
   listCompanies() {
     return this.jobService.listCompanies();
@@ -126,11 +128,13 @@ export class JobController {
   }
 
   // Jobs
+  @ApiOperation({ summary: 'Tạo tin tuyển dụng mới' })
   @Post('jobs')
   createJob(@Body() body: any) {
     return this.jobService.createJob(body);
   }
 
+  @ApiOperation({ summary: 'Danh sách tin tuyển dụng (kèm bộ lọc)' })
   @Get('jobs')
   listJobs(
     @Query('page') page?: string,

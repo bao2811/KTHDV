@@ -27,6 +27,12 @@ prisma/logs
 
 # TypeScript
 *.tsbuildinfo
+*.js
+*.js.map
+*.d.ts
+!**/node_modules/**
+!apps/web/src/**/*.js
+!apps/web/src/**/*.d.ts
 
 # IDE
 .vscode

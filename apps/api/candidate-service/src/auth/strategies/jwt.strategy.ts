@@ -14,6 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: any) {
-    return payload;
+    // Map sub to id for consistency with Gateway and @CurrentUser('id') decorator
+    return {
+      ...payload,
+      id: payload.sub,
+    };
   }
 }

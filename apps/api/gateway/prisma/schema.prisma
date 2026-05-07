@@ -78,6 +78,7 @@ model Profile {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName   String
   phone      String?
+  avatarUrl  String?  // Google or uploaded avatar URL
   experience Json? // Work experience
   education  Json? // Education history
   cvUrl      String?
@@ -259,6 +260,7 @@ model CandidateProfile {
   userId      Int             @unique
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName    String
+  title       String?
   phone       String?
   dateOfBirth DateTime?
   address     String?

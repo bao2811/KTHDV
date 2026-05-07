@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CandidateService } from './candidate.service';
 
 @ApiTags('Candidates')
@@ -19,11 +19,13 @@ export class CandidateController {
   constructor(private readonly candidateService: CandidateService) {}
 
   // Profiles
+  @ApiOperation({ summary: 'Tạo hồ sơ ứng viên' })
   @Post('profiles')
   createProfile(@Body() body: any) {
     return this.candidateService.createProfile(body);
   }
 
+  @ApiOperation({ summary: 'Danh sách hồ sơ ứng viên' })
   @Get('profiles')
   listProfiles(
     @Query('page') page?: string,
@@ -130,6 +132,7 @@ export class CandidateController {
   }
 
   // Applications
+  @ApiOperation({ summary: 'Nộp đơn ứng tuyển' })
   @Post('applications')
   createApplication(@Body() body: any) {
     return this.candidateService.createApplication(body);

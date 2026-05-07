@@ -12,7 +12,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ 
+      isGlobal: true,
+      envFilePath: '../../../.env'
+    }),
     PrismaModule,
     AuthModule,
     CandidateModule,
