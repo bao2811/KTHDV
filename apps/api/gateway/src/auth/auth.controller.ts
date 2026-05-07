@@ -102,11 +102,12 @@ export class AuthController {
 
     const result = await this.authService.googleLogin(googleUser);
 
-    const frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3456';
-
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    console.log('DEBUG: Google Auth Callback - Redirecting to FRONTEND_URL:', frontendUrl);
+    
     // Redirect to frontend callback page with tokens
-    const url = new URL(`${frontendUrl}/auth/callback`);
+    const finalFrontendUrl = frontendUrl || 'http://localhost:3456';
+    const url = new URL(`${finalFrontendUrl}/auth/callback`);
     url.searchParams.append('accessToken', result.accessToken);
     url.searchParams.append('refreshToken', result.refreshToken);
     url.searchParams.append('user', JSON.stringify(result.user));

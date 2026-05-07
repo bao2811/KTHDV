@@ -11,9 +11,14 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3456'],
+    origin: [
+      'http://localhost:3001', 
+      'http://localhost:3000', 
+      'http://localhost:3456',
+      'https://nexustalent-orpin.vercel.app'
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],
     credentials: true,
   });
 

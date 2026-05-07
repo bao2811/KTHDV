@@ -16,6 +16,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { SERVICE_PROXY } from '../proxy.constants';
 
+import { Public } from '../../auth/decorators/public.decorator';
+
 const JOB_SERVICE_URL = process.env.JOB_SERVICE_URL || 'http://localhost:3002';
 
 const getAuthConfig = (req: any) => ({
@@ -41,6 +43,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('companies')
   async getCompanies(
     @Request() req: any,
@@ -53,6 +56,7 @@ export class JobProxyController {
     return this.proxy.get(url.toString(), getAuthConfig(req));
   }
 
+  @Public()
   @Get('companies/:id')
   async getCompany(@Request() req: any, @Param('id') id: number) {
     return this.proxy.get(
@@ -92,6 +96,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('locations')
   async getLocations(@Request() req: any) {
     return this.proxy.get(
@@ -100,6 +105,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('locations/:id')
   async getLocation(@Request() req: any, @Param('id') id: number) {
     return this.proxy.get(
@@ -139,6 +145,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('categories')
   async getCategories(@Request() req: any) {
     return this.proxy.get(
@@ -147,6 +154,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('categories/:id')
   async getCategory(@Request() req: any, @Param('id') id: number) {
     return this.proxy.get(
@@ -186,6 +194,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('skills')
   async getSkills(@Request() req: any) {
     return this.proxy.get(`${JOB_SERVICE_URL}/jobs/skills`, getAuthConfig(req));
@@ -230,6 +239,7 @@ export class JobProxyController {
     );
   }
 
+  @Public()
   @Get('postings')
   async getJobs(
     @Request() req: any,
@@ -244,6 +254,7 @@ export class JobProxyController {
     return this.proxy.get(url.toString(), getAuthConfig(req));
   }
 
+  @Public()
   @Get('postings/:id')
   async getJob(@Request() req: any, @Param('id') id: number) {
     return this.proxy.get(

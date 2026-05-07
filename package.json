@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "dev": "docker-compose up",
+    "prisma:generate": "npm run prisma:generate --workspaces --if-present",
     "build": "npm run build -w apps/*",
     "lint": "npm run lint -w apps/*"
   },
