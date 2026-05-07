@@ -10,6 +10,8 @@ import { UsersModule } from './users/users.module';
 import { ProxyModule } from './proxy/proxy.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuditInterceptor } from './audit/audit.interceptor';
+import { ApplicationsModule } from './applications/applications.module';
+import { PipelineModule } from './pipeline/pipeline.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AuditInterceptor } from './audit/audit.interceptor';
     AuditModule,
     UsersModule,
     ProxyModule,
+    ApplicationsModule,
+    PipelineModule,
   ],
   controllers: [AppController],
   providers: [

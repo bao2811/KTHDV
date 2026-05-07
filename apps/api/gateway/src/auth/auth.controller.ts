@@ -98,9 +98,12 @@ export class AuthController {
 
     const result = await this.authService.googleLogin(googleUser);
 
-    // Redirect to frontend with tokens as query params
-    const frontendUrl = `http://localhost:3001/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
-    return res.redirect(frontendUrl);
+    // In development/testing, return JSON directly so you can see the tokens in browser
+    // In production, you would redirect to your frontend (e.g., Next.js)
+    return res.json({
+      message: 'Đăng nhập Google thành công',
+      ...result,
+    });
   }
 
   /**

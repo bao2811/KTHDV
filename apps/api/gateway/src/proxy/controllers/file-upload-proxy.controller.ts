@@ -1,0 +1,116 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Param,
+  UploadedFile,
+  UseInterceptors,
+  Request,
+  Inject,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import type { Response } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import { SERVICE_PROXY } from '../proxy.constants';
+import type { IServiceProxy } from '../interfaces/service-proxy.interface';
+import FormData from 'form-data';
+
+const CANDIDATE_SERVICE_URL =
+  process.env.CANDIDATE_SERVICE_URL || 'http://localhost:3001';
+
+const getAuthConfig = (req: any) => ({
+  headers: {
+    Authorization: req.headers.authorization,
+  },
+});
+
+@ApiTags('File Upload (via Proxy)')
+@Controller('upload')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+export class FileUploadProxyController {
+  constructor(@Inject(SERVICE_PROXY) private proxy: IServiceProxy) {}
+
+  @Post('cv')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async uploadCV(
+    @Request() req: any,
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    const formData = new FormData();
+    formData.append('file', file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
+    formData.append('userId', userId.toString());
+
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/upload/cv`,
+      formData,
+      {
+        headers: {
+          ...getAuthConfig(req).headers,
+          ...formData.getHeaders(),
+        },
+      },
+    );
+  }
+
+  @Get('my-cvs')
+  async getMyCVs(@Request() req: any) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/upload/my-cvs`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Post('cv/:id/primary')
+  async setPrimaryCV(@Request() req: any, @Param('id') id: string) {
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/primary`,
+      {},
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('cv/:id/delete')
+  async deleteCV(@Request() req: any, @Param('id') id: string) {
+    return this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/delete`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('cv/:id/download')
+  @ApiOperation({ summary: 'Tải/Xem CV (Trả về link MinIO presigned)' })
+  async downloadCV(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const result = await this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/download`,
+      getAuthConfig(req),
+    );
+    return res.json(result);
+  }
+}
