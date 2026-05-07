@@ -71,6 +71,33 @@ export class FileUploadController {
   }
 
   /**
+   * Upload Avatar for user
+   * POST /api/upload/avatar
+   */
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadAvatar(
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    // Upload to MinIO
+    const { fileUrl } = await this.fileUploadService.uploadCV(file, userId);
+
+    // Update Profile table
+    await this.prisma.profile.update({
+      where: { userId },
+      data: { avatarUrl: fileUrl },
+    });
+
+    return {
+      success: true,
+      avatarUrl: fileUrl,
+      message: 'Cập nhật ảnh đại diện thành công',
+    };
+  }
+
+  /**
    * Get candidate's CVs
    * GET /api/upload/my-cvs
    */

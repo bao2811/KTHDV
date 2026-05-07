@@ -74,6 +74,33 @@ export class FileUploadProxyController {
       },
     );
   }
+  
+  @Post('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadAvatar(
+    @Request() req: any,
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    const formData = new FormData();
+    formData.append('file', file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
+    formData.append('userId', userId.toString());
+
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/upload/avatar`,
+      formData,
+      {
+        headers: {
+          ...getAuthConfig(req).headers,
+          ...formData.getHeaders(),
+        },
+      },
+    );
+  }
 
   @Get('my-cvs')
   async getMyCVs(@Request() req: any) {

@@ -65,6 +65,13 @@ export class AuthService {
         },
       });
 
+      await tx.candidateProfile.create({
+        data: {
+          userId: newUser.id,
+          fullName: dto.fullName,
+        },
+      });
+
       return newUser;
     });
 
@@ -90,7 +97,16 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: { role: true },
+      include: { 
+        role: true,
+        profile: true,
+        candidateProfile: {
+          include: {
+            experiences: true,
+            educations: true,
+          }
+        }
+      },
     });
 
     if (!user || !user.password) {
@@ -119,6 +135,19 @@ export class AuthService {
         email: user.email,
         role: user.role.name,
         status: user.status,
+        profile: user.profile ? {
+          fullName: user.profile.fullName,
+          phone: user.profile.phone,
+          avatarUrl: user.profile.avatarUrl,
+        } : null,
+        candidateProfile: user.candidateProfile ? {
+          id: user.candidateProfile.id,
+          fullName: user.candidateProfile.fullName,
+          phone: user.candidateProfile.phone,
+          summary: user.candidateProfile.summary,
+          experiences: user.candidateProfile.experiences,
+          educations: user.candidateProfile.educations,
+        } : null,
       },
       ...tokens,
     };
@@ -152,11 +181,43 @@ export class AuthService {
     // Update refresh token hash
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
+    // Fetch full user data
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        role: true,
+        profile: true,
+        candidateProfile: {
+          include: {
+            experiences: true,
+            educations: true,
+          }
+        }
+      }
+    });
+
+    if (!fullUser) {
+      throw new ForbiddenException('Không thể lấy thông tin người dùng');
+    }
+
     return {
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role.name,
+        id: fullUser.id,
+        email: fullUser.email,
+        role: fullUser.role.name,
+        profile: fullUser.profile ? {
+          fullName: fullUser.profile.fullName,
+          phone: fullUser.profile.phone,
+          avatarUrl: fullUser.profile.avatarUrl,
+        } : null,
+        candidateProfile: fullUser.candidateProfile ? {
+          id: fullUser.candidateProfile.id,
+          fullName: fullUser.candidateProfile.fullName,
+          phone: fullUser.candidateProfile.phone,
+          summary: fullUser.candidateProfile.summary,
+          experiences: fullUser.candidateProfile.experiences,
+          educations: fullUser.candidateProfile.educations,
+        } : null,
       },
       ...tokens,
     };
@@ -233,6 +294,13 @@ export class AuthService {
           } as any,
         });
 
+        await tx.candidateProfile.create({
+          data: {
+            userId: newUser.id,
+            fullName: googleUser.fullName || 'Google User',
+          },
+        });
+
         return newUser;
       });
     } else if (user.status !== 'ACTIVE') {
@@ -243,11 +311,43 @@ export class AuthService {
     const tokens = await this.generateTokens(user.id, user.email);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
+    // Fetch full user data for response
+    const fullUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+      include: {
+        role: true,
+        profile: true,
+        candidateProfile: {
+          include: {
+            experiences: true,
+            educations: true,
+          }
+        }
+      }
+    });
+
+    if (!fullUser) {
+      throw new UnauthorizedException('Không thể lấy thông tin người dùng');
+    }
+
     return {
       user: {
-        id: user.id,
-        email: user.email,
-        role: user.role.name,
+        id: fullUser.id,
+        email: fullUser.email,
+        role: fullUser.role.name,
+        profile: fullUser.profile ? {
+          fullName: fullUser.profile.fullName,
+          phone: fullUser.profile.phone,
+          avatarUrl: fullUser.profile.avatarUrl,
+        } : null,
+        candidateProfile: fullUser.candidateProfile ? {
+          id: fullUser.candidateProfile.id,
+          fullName: fullUser.candidateProfile.fullName,
+          phone: fullUser.candidateProfile.phone,
+          summary: fullUser.candidateProfile.summary,
+          experiences: fullUser.candidateProfile.experiences,
+          educations: fullUser.candidateProfile.educations,
+        } : null,
       },
       ...tokens,
     };
@@ -268,6 +368,12 @@ export class AuthService {
           },
         },
         profile: true,
+        candidateProfile: {
+          include: {
+            experiences: true,
+            educations: true,
+          },
+        },
       },
     });
 
@@ -292,10 +398,18 @@ export class AuthService {
         ? {
             fullName: user.profile.fullName,
             phone: user.profile.phone,
-            experience: user.profile.experience,
-            education: user.profile.education,
+            avatarUrl: user.profile.avatarUrl,
             cvUrl: user.profile.cvUrl,
-            avatarUrl: (user.profile as any).avatarUrl,
+          }
+        : null,
+      candidateProfile: user.candidateProfile
+        ? {
+            id: user.candidateProfile.id,
+            fullName: user.candidateProfile.fullName,
+            phone: user.candidateProfile.phone,
+            summary: user.candidateProfile.summary,
+            experiences: user.candidateProfile.experiences,
+            educations: user.candidateProfile.educations,
           }
         : null,
       createdAt: user.createdAt,

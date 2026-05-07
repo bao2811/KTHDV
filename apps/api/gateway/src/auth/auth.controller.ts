@@ -9,6 +9,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
@@ -22,7 +23,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * POST /api/auth/register
@@ -98,12 +102,16 @@ export class AuthController {
 
     const result = await this.authService.googleLogin(googleUser);
 
-    // In development/testing, return JSON directly so you can see the tokens in browser
-    // In production, you would redirect to your frontend (e.g., Next.js)
-    return res.json({
-      message: 'Đăng nhập Google thành công',
-      ...result,
-    });
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3456';
+
+    // Redirect to frontend callback page with tokens
+    const url = new URL(`${frontendUrl}/auth/callback`);
+    url.searchParams.append('accessToken', result.accessToken);
+    url.searchParams.append('refreshToken', result.refreshToken);
+    url.searchParams.append('user', JSON.stringify(result.user));
+
+    return res.redirect(url.toString());
   }
 
   /**

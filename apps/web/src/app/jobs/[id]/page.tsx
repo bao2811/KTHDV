@@ -1,300 +1,196 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { jobService } from '@/services/job.service';
+import Navbar from '@/components/common/Navbar';
+import { useAuth } from '@/context/AuthContext';
 
 export default function JobDetailPage() {
-  const params = useParams();
+  const { id } = useParams();
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { user } = useAuth();
+  const [job, setJob] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setIsClient(true);
-    setUserRole(localStorage.getItem('userRole'));
-  }, []);
+    const fetchJob = async () => {
+      try {
+        setLoading(true);
+        const data = await jobService.getJobById(id as string);
+        setJob(data);
+      } catch (error) {
+        console.error('Error fetching job details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // --- MOCK DATA ---
-  const job = {
-    id: params.id,
-    title: 'Senior Frontend Developer (React/Next.js)',
-    company: { 
-      name: 'NexusTech', 
-      logo: 'code',
-      description: 'NexusTech là công ty công nghệ hàng đầu về các giải pháp SaaS cho doanh nghiệp. Chúng tôi xây dựng sản phẩm phục vụ hàng triệu người dùng toàn cầu.',
-      website: 'https://nexustech.example.com',
-      size: '100 - 499 nhân viên',
-      location: 'Hồ Chí Minh (Hybrid)'
-    },
-    location: 'Hồ Chí Minh',
-    jobType: 'FULL_TIME',
-    salaryMin: 20000000,
-    salaryMax: 45000000,
-    experience: '3 - 5 năm',
-    status: 'ACTIVE',
-    skills: [
-      { name: 'React', level: 'REQUIRED' },
-      { name: 'Next.js', level: 'REQUIRED' },
-      { name: 'TypeScript', level: 'REQUIRED' },
-      { name: 'TailwindCSS', level: 'NICE_TO_HAVE' },
-      { name: 'GraphQL', level: 'NICE_TO_HAVE' }
-    ],
-    description: `
-      <p>Chúng tôi đang tìm kiếm một Senior Frontend Developer gia nhập đội ngũ phát triển sản phẩm cốt lõi. Bạn sẽ chịu trách nhiệm xây dựng các giao diện web phức tạp, tối ưu hóa hiệu năng và mang lại trải nghiệm người dùng tuyệt vời.</p>
-      <br/>
-      <p>Với vai trò này, bạn cần hiểu biết sâu sắc về kiến trúc ứng dụng hiện đại, tối ưu hóa hiệu suất và thiết kế component mở rộng được. Bạn sẽ làm việc chặt chẽ với product managers và UI/UX designers để chuyển các yêu cầu nghiệp vụ phức tạp thành các giao diện mượt mà và trực quan.</p>
-    `,
-    responsibilities: [
-      "Phát triển các tính năng mới bằng React.js và Next.js.",
-      "Tối ưu hóa hiệu năng ứng dụng web (Core Web Vitals).",
-      "Review code và hướng dẫn các thành viên junior trong team.",
-      "Phối hợp chặt chẽ với team UI/UX Designer và Backend Engineer."
-    ],
-    requirements: [
-      "Có ít nhất 3 năm kinh nghiệm lập trình Frontend.",
-      "Thành thạo React, TypeScript và quản lý State.",
-      "Có kinh nghiệm xây dựng kiến trúc mở rộng."
-    ],
-    postedAt: '2 ngày trước',
-    expiresAt: '12/11/2026'
-  };
+    if (id) fetchJob();
+  }, [id]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
+      maximumFractionDigits: 0 
+    }).format(amount);
   };
 
-  if (!isClient) return null;
+  if (loading) {
+    return (
+      <div className="bg-background min-h-screen">
+        <Navbar />
+        <div className="pt-24 p-8 max-w-7xl mx-auto flex flex-col gap-8 animate-pulse">
+          <div className="h-40 bg-surface-container rounded-2xl"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 h-96 bg-surface-container rounded-2xl"></div>
+            <div className="h-64 bg-surface-container rounded-2xl"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <div className="bg-background min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-grow flex flex-col items-center justify-center p-20 text-center">
+          <h2 className="text-2xl font-bold text-on-surface">Không tìm thấy công việc</h2>
+          <button onClick={() => router.push('/jobs')} className="mt-4 text-primary font-bold">Quay lại danh sách</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
-      {/* TopNavBar */}
-      <header className="bg-surface-container-lowest text-primary border-b border-outline-variant w-full shadow-sm flex justify-between items-center px-container-padding py-stack-gap-md sticky top-0 z-50">
-        <Link href="/" className="font-headline-lg text-headline-lg font-bold text-primary tracking-tight flex items-center gap-2">
-          <span className="material-symbols-outlined icon-fill">token</span>
-          NexusTalent
-        </Link>
-        <nav className="hidden md:flex gap-stack-gap-lg">
-          <Link href="/jobs" className="text-primary font-bold border-b-2 border-primary font-body-md text-body-md pb-1">
-            Tìm việc làm
-          </Link>
-          <Link href="/candidate/dashboard" className="text-on-surface-variant hover:text-primary font-body-md text-body-md hover:bg-surface-container transition-colors rounded-lg px-stack-gap-sm py-1">
-            Candidate Portal
-          </Link>
-        </nav>
-        <div className="flex gap-stack-gap-sm">
-          {!userRole ? (
-            <>
-              <Link href="/login" className="font-label-bold text-label-bold text-on-surface bg-surface border border-outline-variant rounded-lg px-stack-gap-md py-stack-gap-sm hover:bg-surface-container transition-colors">
-                Đăng nhập
-              </Link>
-              <Link href="/register" className="font-label-bold text-label-bold text-on-primary bg-primary rounded-lg shadow-sm px-stack-gap-md py-stack-gap-sm hover:bg-primary/90 transition-colors">
-                Đăng ký
-              </Link>
-            </>
-          ) : (
-            <Link href={`/${userRole}`} className="font-label-bold text-label-bold text-on-surface bg-surface border border-outline-variant rounded-lg px-stack-gap-md py-stack-gap-sm hover:bg-surface-container transition-colors flex items-center gap-2">
-              <span className="material-symbols-outlined text-[16px]">dashboard</span>
-              Dashboard
-            </Link>
-          )}
-        </div>
-      </header>
+    <div className="bg-background min-h-screen flex flex-col">
+      <Navbar />
+      
+      <main className="flex-grow pt-24 pb-12 px-container-padding max-w-7xl mx-auto w-full animate-in fade-in duration-500">
+        {/* Back Link */}
+        <button 
+          onClick={() => router.push('/jobs')}
+          className="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors mb-8 group"
+        >
+          <span className="material-symbols-outlined text-[20px] transition-transform group-hover:-translate-x-1">arrow_back</span>
+          <span className="font-label-bold text-label-bold uppercase">Quay lại tìm việc</span>
+        </button>
 
-      <main className="flex-grow container mx-auto px-container-padding py-stack-gap-lg flex flex-col lg:flex-row gap-stack-gap-lg max-w-7xl">
-        {/* Main Content Area */}
-        <div className="flex-grow lg:w-2/3 space-y-stack-gap-lg">
-          
-          {/* Job Header Card */}
-          <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-stack-gap-lg space-y-stack-gap-md relative">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="font-headline-xl text-headline-xl text-on-surface">{job.title}</h1>
-                <p className="font-body-md text-body-md text-on-surface-variant mt-stack-gap-sm">
-                  {job.company.name} • {job.company.location}
-                </p>
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Main Content Area */}
+          <div className="flex-grow lg:w-2/3 space-y-8">
+            {/* Job Header Card */}
+            <section className="bg-surface-container-lowest rounded-3xl border border-surface-variant/30 shadow-sm p-10 space-y-8 relative overflow-hidden">
+              <div className="flex justify-between items-start">
+                <div className="space-y-4">
+                  <h1 className="font-headline-xl text-3xl font-black text-on-surface leading-tight">{job.title}</h1>
+                  <div className="flex items-center gap-4 text-on-surface-variant">
+                    <span className="font-bold text-primary text-lg">{job.company?.name}</span>
+                    <span className="w-1 h-1 bg-outline-variant rounded-full"></span>
+                    <span className="font-medium">{job.location?.city}</span>
+                  </div>
+                </div>
+                <div className="w-20 h-20 bg-surface-container-low rounded-2xl flex items-center justify-center shrink-0 border border-surface-variant/30 shadow-sm">
+                  {job.company?.logoUrl ? (
+                    <img src={job.company.logoUrl} alt={job.company.name} className="w-full h-full object-contain p-2" />
+                  ) : (
+                    <span className="material-symbols-outlined text-[40px] text-primary">domain</span>
+                  )}
+                </div>
               </div>
-              <div className="w-16 h-16 bg-surface-container rounded-xl flex items-center justify-center shrink-0 border border-outline-variant">
-                <span className="material-symbols-outlined text-headline-lg text-primary icon-fill">
-                  {job.company.logo}
-                </span>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap gap-stack-gap-sm mt-stack-gap-md">
-              <span className="bg-primary-container/20 text-primary font-label-bold text-label-bold px-stack-gap-sm py-1 rounded-full border border-primary/20 uppercase">
-                {job.jobType === 'FULL_TIME' ? 'Toàn thời gian' : job.jobType === 'REMOTE' ? 'Remote' : 'Bán thời gian'}
-              </span>
-              <span className="bg-surface-container text-on-surface-variant font-label-bold text-label-bold px-stack-gap-sm py-1 rounded-full border border-outline-variant uppercase">
-                {job.experience}
-              </span>
-              <span className="bg-surface-container text-on-surface-variant font-label-bold text-label-bold px-stack-gap-sm py-1 rounded-full border border-outline-variant uppercase">
-                {formatCurrency(job.salaryMin)} - {formatCurrency(job.salaryMax)}
-              </span>
-            </div>
-          </section>
 
-          {/* Job Description Card */}
-          <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low">
-              <h2 className="font-headline-lg text-headline-lg">Về công việc này</h2>
-            </div>
-            <div className="p-stack-gap-lg space-y-stack-gap-md font-body-md text-body-md text-on-surface-variant">
-              <div dangerouslySetInnerHTML={{ __html: job.description }} className="space-y-4" />
-            </div>
-          </section>
-
-          {/* Responsibilities & Requirements Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-stack-gap-lg">
-            
-            {/* Responsibilities */}
-            <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
-              <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low">
-                <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Trách nhiệm</h3>
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-xl font-bold text-sm border border-primary/10">
+                  <span className="material-symbols-outlined text-[18px]">schedule</span>
+                  {job.jobType}
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-success/5 text-success rounded-xl font-bold text-sm border border-success/10">
+                  <span className="material-symbols-outlined text-[18px]">payments</span>
+                  {job.salaryMin ? `${formatCurrency(job.salaryMin)} - ${formatCurrency(job.salaryMax)}` : 'Thỏa thuận'}
+                </div>
               </div>
-              <ul className="flex-grow">
-                {job.responsibilities.map((resp, index) => (
-                  <li key={index} className="p-stack-gap-sm border-b border-outline-variant last:border-b-0 flex items-start gap-stack-gap-sm text-body-md text-on-surface-variant">
-                    <span className="material-symbols-outlined shrink-0 text-primary mt-0.5">arrow_right</span>
-                    <span>{resp}</span>
-                  </li>
-                ))}
-              </ul>
             </section>
 
-            {/* Requirements */}
-            <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
-              <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low">
-                <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Yêu cầu</h3>
+            {/* Description Section */}
+            <section className="bg-surface-container-lowest rounded-3xl border border-surface-variant/30 shadow-sm p-10">
+              <h2 className="text-xl font-black text-on-surface mb-6 flex items-center gap-3">
+                <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                Chi tiết công việc
+              </h2>
+              <div className="text-on-surface-variant leading-relaxed whitespace-pre-line text-base">
+                {job.description}
               </div>
-              <ul className="flex-grow">
-                {job.requirements.map((req, index) => (
-                  <li key={index} className="p-stack-gap-sm border-b border-outline-variant last:border-b-0 flex items-start gap-stack-gap-sm text-body-md text-on-surface-variant">
-                    <span className="material-symbols-outlined shrink-0 text-primary mt-0.5">check</span>
-                    <span>{req}</span>
-                  </li>
+            </section>
+
+            {/* Skills Section */}
+            <section className="bg-surface-container-lowest rounded-3xl border border-surface-variant/30 shadow-sm p-10">
+              <h2 className="text-xl font-black text-on-surface mb-6 flex items-center gap-3">
+                <span className="w-1.5 h-6 bg-primary rounded-full"></span>
+                Kỹ năng yêu cầu
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                {job.jobSkills?.map((js: any) => (
+                  <span 
+                    key={js.skillId} 
+                    className="px-5 py-2.5 bg-surface-container text-on-surface-variant rounded-xl text-sm font-bold border border-surface-variant/30 hover:border-primary hover:text-primary transition-all cursor-default"
+                  >
+                    {js.skill?.name}
+                  </span>
                 ))}
-              </ul>
+              </div>
             </section>
           </div>
 
-          {/* Skills Map Section */}
-          <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low flex items-center gap-stack-gap-sm">
-              <span className="material-symbols-outlined text-primary">hub</span>
-              <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Kỹ năng liên quan</h3>
+          {/* Sidebar Area */}
+          <aside className="lg:w-1/3 space-y-8">
+            {/* Apply Action Card */}
+            <div className="bg-primary text-on-primary rounded-3xl shadow-2xl p-10 flex flex-col items-center text-center relative overflow-hidden">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
+               
+               <h3 className="text-2xl font-black mb-3 text-on-primary relative z-10">Gia nhập TechNova</h3>
+               <p className="text-on-primary/80 mb-10 relative z-10 font-medium">Chúng tôi đang tìm kiếm những tài năng như bạn để cùng xây dựng tương lai.</p>
+               
+               {user ? (
+                 <button 
+                   onClick={() => router.push(`/jobs/${job.id}/apply`)}
+                   className="w-full bg-white text-primary font-black py-4 rounded-2xl shadow-lg hover:bg-surface-container transition-all active:scale-[0.98] relative z-10 uppercase tracking-widest text-sm"
+                 >
+                   ỨNG TUYỂN NGAY
+                 </button>
+               ) : (
+                 <button 
+                   onClick={() => router.push('/login')}
+                   className="w-full bg-white text-primary font-black py-4 rounded-2xl shadow-lg hover:bg-surface-container transition-all active:scale-[0.98] relative z-10 uppercase tracking-widest text-sm"
+                 >
+                   ĐĂNG NHẬP ĐỂ ỨNG TUYỂN
+                 </button>
+               )}
             </div>
-            <div className="p-stack-gap-md flex flex-wrap gap-stack-gap-sm">
-              {job.skills.map((skill) => (
-                <span key={skill.name} className="bg-surface-container text-on-surface-variant font-label-bold text-label-bold px-stack-gap-sm py-1 rounded-full border border-outline-variant hover:border-primary hover:text-primary cursor-pointer transition-colors">
-                  {skill.name}
-                </span>
+
+            {/* Quick Facts Sidebar */}
+            <div className="bg-surface-container-lowest rounded-3xl border border-surface-variant/30 shadow-sm p-8 space-y-6">
+              <h3 className="text-sm font-black text-on-surface-variant uppercase tracking-widest mb-2">Thông tin bổ sung</h3>
+              {[
+                { icon: 'location_on', label: 'Địa điểm', value: job.location?.city },
+                { icon: 'history', label: 'Ngày đăng', value: 'Mới cập nhật' },
+                { icon: 'groups', label: 'Quy mô công ty', value: '100-500 nhân viên' },
+              ].map((fact, idx) => (
+                <div key={idx} className="flex items-center gap-4 group">
+                  <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center shrink-0 group-hover:bg-primary/5 transition-colors">
+                    <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">{fact.icon}</span>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black text-outline uppercase tracking-widest mb-0.5">{fact.label}</div>
+                    <div className="text-sm font-bold text-on-surface">{fact.value}</div>
+                  </div>
+                </div>
               ))}
             </div>
-          </section>
-
+          </aside>
         </div>
-
-        {/* Sidebar Area */}
-        <aside className="lg:w-1/3 flex flex-col gap-stack-gap-lg">
-          
-          {/* Apply Action Card */}
-          <div className="bg-primary text-on-primary rounded-xl shadow-lg p-stack-gap-lg flex flex-col items-center text-center">
-            <h3 className="font-headline-lg text-headline-lg mb-stack-gap-sm text-on-primary">Bạn đã sẵn sàng?</h3>
-            <p className="font-body-md text-body-md text-on-primary mb-stack-gap-md opacity-90">Gia nhập đội ngũ của chúng tôi ngay hôm nay.</p>
-            
-            {userRole === 'candidate' ? (
-              <button 
-                onClick={() => router.push(`/jobs/${job.id}/apply`)}
-                className="w-full bg-surface text-primary font-label-bold text-label-bold py-stack-gap-md rounded-lg shadow-sm hover:bg-surface-container transition-colors uppercase tracking-wider"
-              >
-                ỨNG TUYỂN NGAY
-              </button>
-            ) : userRole ? (
-              <div className="w-full bg-surface/10 border border-surface/20 rounded-lg py-stack-gap-md px-4 text-sm text-on-primary font-medium">
-                Bạn đang đăng nhập dưới quyền <strong className="uppercase">{userRole}</strong>.
-              </div>
-            ) : (
-              <button 
-                onClick={() => router.push('/login')}
-                className="w-full bg-surface text-primary font-label-bold text-label-bold py-stack-gap-md rounded-lg shadow-sm hover:bg-surface-container transition-colors uppercase tracking-wider"
-              >
-                ĐĂNG NHẬP ĐỂ ỨNG TUYỂN
-              </button>
-            )}
-            
-            <button className="mt-stack-gap-sm w-full bg-transparent text-on-primary font-label-bold text-label-bold py-stack-gap-sm rounded-lg hover:bg-surface/10 transition-colors flex items-center justify-center gap-stack-gap-sm uppercase">
-              <span className="material-symbols-outlined text-[18px]">bookmark</span> 
-              Lưu công việc
-            </button>
-          </div>
-
-          {/* Quick Facts */}
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low">
-              <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Thông tin nhanh</h3>
-            </div>
-            <div className="p-stack-gap-md space-y-stack-gap-md">
-              <div className="flex items-start gap-stack-gap-md">
-                <span className="material-symbols-outlined text-outline">calendar_today</span>
-                <div>
-                  <div className="font-label-bold text-label-bold text-outline uppercase mb-1">Ngày đăng</div>
-                  <div className="font-body-sm text-body-sm text-on-surface font-medium">{job.postedAt}</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-stack-gap-md">
-                <span className="material-symbols-outlined text-outline">event_busy</span>
-                <div>
-                  <div className="font-label-bold text-label-bold text-outline uppercase mb-1">Hết hạn</div>
-                  <div className="font-body-sm text-body-sm text-on-surface font-medium">{job.expiresAt}</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-stack-gap-md">
-                <span className="material-symbols-outlined text-outline">work</span>
-                <div>
-                  <div className="font-label-bold text-label-bold text-outline uppercase mb-1">Loại công việc</div>
-                  <div className="font-body-sm text-body-sm text-on-surface font-medium">{job.jobType === 'FULL_TIME' ? 'Toàn thời gian' : job.jobType}</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-stack-gap-md">
-                <span className="material-symbols-outlined text-outline">trending_up</span>
-                <div>
-                  <div className="font-label-bold text-label-bold text-outline uppercase mb-1">Kinh nghiệm</div>
-                  <div className="font-body-sm text-body-sm text-on-surface font-medium">{job.experience}</div>
-                </div>
-              </div>
-              <div className="flex items-start gap-stack-gap-md">
-                <span className="material-symbols-outlined text-outline">payments</span>
-                <div>
-                  <div className="font-label-bold text-label-bold text-outline uppercase mb-1">Mức lương</div>
-                  <div className="font-body-sm text-body-sm text-on-surface font-medium">{formatCurrency(job.salaryMin)} - {formatCurrency(job.salaryMax)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Company Teaser */}
-          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm p-stack-gap-md">
-            <div className="flex items-center gap-stack-gap-sm mb-stack-gap-sm">
-              <div className="w-8 h-8 bg-surface-container rounded border border-outline-variant flex items-center justify-center">
-                <span className="material-symbols-outlined text-[16px] text-primary icon-fill">{job.company.logo}</span>
-              </div>
-              <h4 className="font-label-bold text-label-bold text-on-surface">{job.company.name}</h4>
-            </div>
-            <p className="font-body-sm text-body-sm text-on-surface-variant mb-stack-gap-md line-clamp-3">
-              {job.company.description}
-            </p>
-            <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-              <span className="material-symbols-outlined text-[16px]">groups</span>
-              <span className="font-medium text-gray-900">{job.company.size}</span>
-            </div>
-            <Link href={job.company.website} target="_blank" className="font-label-bold text-label-bold text-primary hover:underline flex items-center gap-1">
-              Xem hồ sơ công ty <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-            </Link>
-          </div>
-        </aside>
       </main>
-
     </div>
   );
 }

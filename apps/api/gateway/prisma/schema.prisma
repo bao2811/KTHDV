@@ -260,6 +260,7 @@ model CandidateProfile {
   userId      Int             @unique
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   fullName    String
+  title       String?
   phone       String?
   dateOfBirth DateTime?
   address     String?

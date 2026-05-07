@@ -1,220 +1,153 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-// --- MOCK DATA ---
-const mockJobs = [
-  {
-    id: 'job-1',
-    title: 'Kiến trúc sư Hệ thống Cao cấp',
-    company: 'Giải pháp TechNova',
-    location: 'Hà Nội, VN (Linh hoạt)',
-    matchScore: 94,
-    type: 'Toàn thời gian',
-    salary: '60tr - 90tr VNĐ',
-    tags: ['AWS', 'Microservices', 'Node.js'],
-    icon: 'architecture'
-  },
-  {
-    id: 'job-2',
-    title: 'Kỹ sư DevOps Trưởng',
-    company: 'CloudFirst VN',
-    location: 'Từ xa',
-    matchScore: 88,
-    type: 'Toàn thời gian',
-    salary: '50tr - 75tr VNĐ',
-    tags: ['Kubernetes', 'CI/CD', 'Terraform'],
-    icon: 'code_blocks'
-  },
-  {
-    id: 'job-3',
-    title: 'Nghiên cứu viên UX Cao cấp',
-    company: 'Sáng tạo CreativeMinds',
-    location: 'TP.HCM, VN',
-    matchScore: 72,
-    type: 'Hợp đồng',
-    salary: '500.000đ/giờ',
-    tags: ['User Testing', 'Data Analysis', 'Figma'],
-    icon: 'design_services'
-  },
-  {
-    id: 'job-4',
-    title: 'Kỹ sư Frontend (React)',
-    company: 'FinTech Global',
-    location: 'Hà Nội, VN',
-    matchScore: 91,
-    type: 'Toàn thời gian',
-    salary: '$2000 - $3500',
-    tags: ['React', 'Next.js', 'TypeScript'],
-    icon: 'laptop_mac'
-  }
-];
-
-const categories = [
-  { name: 'Kỹ thuật', count: 42 },
-  { name: 'Thiết kế', count: 18 },
-  { name: 'Sản phẩm', count: 24 },
-  { name: 'Marketing', count: 12 }
-];
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { useJobs } from '@/hooks/useJobs';
+import JobCard from '@/components/features/jobs/JobCard';
+import JobSearchFilters from '@/components/features/jobs/JobSearchFilters';
+import JobDetailPreview from '@/components/features/jobs/JobDetailPreview';
 
 export default function CandidateJobs() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const { 
+    jobs, 
+    loading, 
+    pagination, 
+    params, 
+    updateFilters, 
+    setPage 
+  } = useJobs({ limit: 10 });
+
+  // Reset selected job when filters change or jobs reload
+  useEffect(() => {
+    if (jobs.length > 0 && !selectedJob) {
+      setSelectedJob(jobs[0]);
+    }
+  }, [jobs]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-grid-gutter w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
-      
-      {/* Filters Sidebar */}
-      <aside className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-stack-gap-lg">
-        <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-surface-variant/50 p-6 sticky top-24">
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-6">Bộ lọc</h2>
+    <ProtectedRoute allowedRoles={['Candidate']}>
+      <div className="flex flex-col gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-700 h-full">
+        
+        {/* Header & Search Section - Full Width Background */}
+        <div className="bg-surface-container-lowest border-b border-outline-variant/20 -mx-6 -mt-6 mb-6">
+          <JobSearchFilters onFilterChange={updateFilters} />
+        </div>
+
+        {/* Master-Detail Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start flex-grow overflow-hidden">
           
-          <div className="flex flex-col gap-8">
-            {/* Search Input */}
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-              <input 
-                className="w-full pl-10 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl text-body-sm font-body-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" 
-                placeholder="Tìm kiếm từ khóa..." 
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            {/* Category Filter */}
+          {/* Advanced Filters Sidebar (TopCV Style) */}
+          <aside className="lg:col-span-2 hidden xl:flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2" style={{ maxHeight: 'calc(100vh - 220px)' }}>
             <div>
-              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-4 uppercase tracking-wider">Ngành nghề</h3>
-              <div className="flex flex-col gap-3">
-                {categories.map(cat => (
-                  <label key={cat.name} className="flex items-center gap-3 cursor-pointer group">
-                    <input type="checkbox" className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" />
-                    <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">{cat.name} ({cat.count})</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <hr className="border-outline-variant/30" />
-
-            {/* Job Type Filter */}
-            <div>
-              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-4 uppercase tracking-wider">Hình thức</h3>
-              <div className="flex flex-col gap-3">
-                {['Toàn thời gian', 'Hợp đồng', 'Làm từ xa', 'Tự do'].map(type => (
-                  <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                    <input type="checkbox" className="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary focus:ring-offset-0 transition-all cursor-pointer" />
-                    <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">{type}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Skills Filter */}
-            <div>
-              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-4 uppercase tracking-wider">Kỹ năng phổ biến</h3>
-              <div className="flex flex-wrap gap-2">
-                {['React', 'Node.js', 'AWS', 'Figma', 'Python'].map(skill => (
-                  <span key={skill} className="px-3 py-1.5 bg-surface-container text-on-surface-variant font-label-bold text-[11px] rounded-lg cursor-pointer hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Upgrade Card - Sidebar version
-        <div className="bg-gradient-to-br from-primary to-indigo-900 rounded-2xl p-6 text-on-primary shadow-lg overflow-hidden relative">
-          <div className="relative z-10">
-            <h4 className="font-headline-lg text-headline-lg font-bold mb-2">Nexus Talent AI</h4>
-            <p className="text-xs opacity-80 mb-4">Nhận gợi ý việc làm chính xác tới 99% dựa trên hồ sơ của bạn.</p>
-            <button className="w-full py-2 bg-white text-primary font-label-bold text-label-bold rounded-lg hover:shadow-xl transition-all active:scale-95">Tìm hiểu thêm</button>
-          </div>
-          <span className="material-symbols-outlined absolute -bottom-4 -right-4 text-[100px] text-white/10 -rotate-12">auto_awesome</span>
-        </div> */}
-      </aside>
-
-      {/* Job Listings Canvas */}
-      <section className="flex-1 flex flex-col gap-stack-gap-lg">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
-          <div>
-            <h1 className="font-headline-xl text-headline-xl text-on-surface font-bold">Tìm kiếm cơ hội mới</h1>
-            <p className="font-body-md text-body-md text-on-surface-variant mt-1">Tìm thấy {mockJobs.length} vị trí phù hợp với tiêu chí của bạn.</p>
-          </div>
-          <div className="flex items-center gap-2 bg-surface-container-low px-4 py-2 rounded-xl border border-surface-variant/30">
-            <span className="font-label-bold text-label-bold text-on-surface-variant">Sắp xếp:</span>
-            <select className="bg-transparent border-none font-label-bold text-label-bold text-primary focus:ring-0 cursor-pointer outline-none">
-              <option>Phù hợp nhất</option>
-              <option>Mới nhất</option>
-              <option>Lương cao nhất</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Job Cards List */}
-        <div className="flex flex-col gap-4">
-          {mockJobs.map((job) => (
-            <div 
-              key={job.id} 
-              className="group bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-variant/50 flex flex-col md:flex-row gap-6 md:items-center hover:border-primary/50 hover:shadow-ambient-card transition-all duration-300 relative overflow-hidden"
-            >
-              {/* Highlight bar for high match */}
-              {job.matchScore > 90 && (
-                <div className="absolute top-0 left-0 w-1.5 h-full bg-primary"></div>
-              )}
-
-              <div className="flex-shrink-0">
-                <div className="w-16 h-16 bg-surface-container rounded-xl flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
-                  <span className="material-symbols-outlined text-[32px]">{job.icon}</span>
+              <h4 className="text-[11px] font-black text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[16px]">filter_list</span>
+                Lọc nâng cao
+              </h4>
+              
+              <div className="flex flex-col gap-6">
+                {/* Exp Filter */}
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs font-bold text-on-surface">Kinh nghiệm</span>
+                  {['Tất cả', 'Chưa có kinh nghiệm', 'Dưới 1 năm', '1 - 3 năm', '3 - 5 năm', 'Trên 5 năm'].map(exp => (
+                    <label key={exp} className="flex items-center gap-2 cursor-pointer group">
+                      <div className="w-4 h-4 rounded border border-outline-variant group-hover:border-primary transition-colors flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-sm bg-primary opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
+                      </div>
+                      <input type="checkbox" className="hidden" />
+                      <span className="text-xs text-on-surface-variant group-hover:text-primary transition-colors">{exp}</span>
+                    </label>
+                  ))}
                 </div>
-              </div>
 
-              <div className="flex-grow">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-1">{job.title}</h3>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full font-label-bold text-[11px] uppercase tracking-wider ${
-                      job.matchScore > 90 ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-surface-container text-on-surface-variant border border-surface-variant/50'
-                    }`}>
-                      {job.matchScore}% Phù hợp
-                    </span>
-                    <button className="text-outline-variant hover:text-primary transition-all active:scale-75">
-                      <span className="material-symbols-outlined text-[22px]">bookmark_border</span>
-                    </button>
-                  </div>
-                </div>
-                <p className="font-body-md text-body-md text-on-surface-variant mb-4 font-medium">{job.company} • {job.location}</p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-2.5 py-1 bg-surface-container-high text-on-surface-variant rounded-lg font-label-bold text-[11px]">{job.type}</span>
-                  <span className="px-2.5 py-1 bg-surface-container-high text-on-surface-variant rounded-lg font-label-bold text-[11px]">{job.salary}</span>
-                  {job.tags.map(tag => (
-                    <span key={tag} className="px-2.5 py-1 bg-secondary-fixed/30 text-on-secondary-fixed-variant rounded-lg font-label-bold text-[11px]">{tag}</span>
+                {/* Level Filter */}
+                <div className="flex flex-col gap-3">
+                  <span className="text-xs font-bold text-on-surface">Cấp bậc</span>
+                  {['Nhân viên', 'Trưởng phòng', 'Giám đốc', 'Thực tập sinh'].map(lvl => (
+                    <label key={lvl} className="flex items-center gap-2 cursor-pointer group">
+                      <div className="w-4 h-4 rounded border border-outline-variant group-hover:border-primary transition-colors flex items-center justify-center">
+                        <div className="w-2 h-2 rounded-sm bg-primary opacity-0 group-has-[:checked]:opacity-100 transition-opacity"></div>
+                      </div>
+                      <input type="checkbox" className="hidden" />
+                      <span className="text-xs text-on-surface-variant group-hover:text-primary transition-colors">{lvl}</span>
+                    </label>
                   ))}
                 </div>
               </div>
-
-              <div className="flex flex-row md:flex-col gap-3 w-full md:w-auto md:min-w-[140px]">
-                <button className="flex-1 px-6 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:shadow-lg hover:bg-primary/90 transition-all active:scale-95 shadow-sm">
-                  Ứng tuyển ngay
-                </button>
-                <button className="flex-1 px-6 py-3 bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold rounded-xl hover:bg-surface-variant transition-all active:scale-95">
-                  Chi tiết
-                </button>
-              </div>
             </div>
-          ))}
-        </div>
+          </aside>
 
-        {/* Pagination/Load More */}
-        <div className="mt-8 flex justify-center">
-          <button className="group px-10 py-3 bg-surface-container-low border border-outline-variant/30 text-primary font-label-bold text-label-bold rounded-xl hover:bg-primary hover:text-on-primary transition-all duration-300 flex items-center gap-2 shadow-sm">
-            Xem thêm cơ hội
-            <span className="material-symbols-outlined transition-transform group-hover:translate-y-1">expand_more</span>
-          </button>
+          {/* Master: List */}
+          <section className={`flex flex-col gap-4 overflow-y-auto custom-scrollbar pr-1 transition-all duration-500 ${
+            selectedJob ? 'lg:col-span-5 xl:col-span-5' : 'lg:col-span-12 xl:col-span-10'
+          }`} style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            
+            <div className="flex justify-between items-center px-1 sticky top-0 bg-surface-container-lowest/80 backdrop-blur-md py-2 z-10">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-on-surface">Ưu tiên hiển thị:</span>
+                <div className="flex bg-surface-container rounded-lg p-0.5">
+                  <button className="px-3 py-1 text-[10px] font-bold bg-white shadow-sm rounded-md text-primary">Tin mới nhất</button>
+                  <button className="px-3 py-1 text-[10px] font-bold text-on-surface-variant hover:text-on-surface">Lương cao nhất</button>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Cập nhật 1 phút trước</span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              {loading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-32 bg-surface-container rounded-2xl animate-pulse border border-surface-variant/30 shadow-sm"></div>
+                ))
+              ) : jobs.length > 0 ? (
+                jobs.map((job: any) => (
+                  <JobCard 
+                    key={job.id} 
+                    job={job} 
+                    isSelected={selectedJob?.id === job.id}
+                    onClick={() => setSelectedJob(job)}
+                  />
+                ))
+              ) : (
+                <div className="bg-surface-container-lowest rounded-2xl p-20 text-center border border-dashed border-outline-variant/50">
+                  <span className="material-symbols-outlined text-outline-variant text-6xl mb-4">search_off</span>
+                  <h3 className="text-xl font-bold text-on-surface">Không tìm thấy công việc</h3>
+                  <p className="text-on-surface-variant mt-2">Thử điều chỉnh lại bộ lọc để có nhiều kết quả hơn.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {pagination.totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-8 mb-4">
+                {Array.from({ length: pagination.totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`w-10 h-10 rounded-xl font-bold transition-all ${
+                      params.page === i + 1 
+                        ? 'bg-primary text-on-primary shadow-md scale-110' 
+                        : 'bg-surface-container-lowest text-on-surface hover:bg-surface-variant border border-surface-variant/30'
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Detail: Preview */}
+          {selectedJob && (
+            <aside className="lg:col-span-5 sticky top-0 h-full max-h-[calc(100vh-300px)] animate-in slide-in-from-right-4 duration-500">
+              <JobDetailPreview 
+                job={selectedJob} 
+                onClose={() => setSelectedJob(null)} 
+              />
+            </aside>
+          )}
         </div>
-      </section>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
