@@ -1,9 +1,15 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
-
 
 interface User {
   id: number;
@@ -44,41 +50,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem("accessToken");
+      const storedUser = localStorage.getItem("user");
+
       if (!token) {
         setLoading(false);
         return;
       }
 
+      // Trust stored user data immediately for better UX
+      if (storedUser) {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error("Failed to parse stored user", e);
+        }
+      }
+
       try {
+        // Verify/Refresh user data in background
         const userData = await authService.getMe();
         setUser(userData);
         localStorage.setItem("user", JSON.stringify(userData));
-      } catch (error) {
-        console.error("Session restoration failed", error);
-        logout();
+      } catch (error: any) {
+        console.error("Session verification failed", error);
+        // Only logout if it's a definitive auth error (401)
+        if (error.response?.status === 401) {
+          logout();
+        }
       } finally {
         setLoading(false);
       }
     };
 
     initAuth();
-  }, [logout]);
+  }, []); // Remove logout dependency to prevent unnecessary re-runs
 
-  const login = useCallback((userData: User, accessToken: string, refreshToken: string) => {
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    localStorage.setItem("accessToken", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-  }, []);
+  const login = useCallback(
+    (userData: User, accessToken: string, refreshToken: string) => {
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+    },
+    [],
+  );
 
   const isAuthenticated = !!user;
-  
+
   const getRoleName = (role: any) => {
     if (typeof role === "string") return role;
     return role?.name || "";
   };
 
-  const isAdmin = getRoleName(user?.role) === "Admin" || getRoleName(user?.role) === "HR";
+  const isAdmin =
+    getRoleName(user?.role) === "Admin" || getRoleName(user?.role) === "HR";
   const isCandidate = getRoleName(user?.role) === "Candidate";
 
   const refreshUser = async () => {
