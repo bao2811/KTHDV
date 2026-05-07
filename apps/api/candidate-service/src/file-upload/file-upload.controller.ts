@@ -186,11 +186,11 @@ export class FileUploadController {
       return res.status(403).json({ message: 'Không có quyền' });
     }
 
-    // Redirect to MinIO file
-    const downloadUrl = this.fileUploadService.getDownloadUrl(
-      resume.fileUrl.split('/').pop() || '',
+    // Return JSON with URL instead of redirecting
+    const downloadUrl = await this.fileUploadService.getDownloadUrl(
+      resume.fileUrl,
     );
-    res.redirect(downloadUrl);
+    return res.json({ success: true, url: downloadUrl });
   }
 
   /**
@@ -218,8 +218,8 @@ export class FileUploadController {
       return res.status(400).json({ message: 'File name không hợp lệ' });
     }
 
-    // Redirect to MinIO file
-    const downloadUrl = this.fileUploadService.getDownloadUrl(fileName);
-    res.redirect(downloadUrl);
+    // Return JSON with URL instead of redirecting
+    const downloadUrl = await this.fileUploadService.getDownloadUrl(fileName);
+    return res.json({ success: true, url: downloadUrl });
   }
 }

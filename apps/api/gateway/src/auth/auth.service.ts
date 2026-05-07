@@ -229,7 +229,8 @@ export class AuthService {
           data: {
             userId: newUser.id,
             fullName: googleUser.fullName || 'Google User',
-          },
+            avatarUrl: googleUser.avatar,
+          } as any,
         });
 
         return newUser;
@@ -294,6 +295,7 @@ export class AuthService {
             experience: user.profile.experience,
             education: user.profile.education,
             cvUrl: user.profile.cvUrl,
+            avatarUrl: (user.profile as any).avatarUrl,
           }
         : null,
       createdAt: user.createdAt,

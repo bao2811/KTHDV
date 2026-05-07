@@ -2,8 +2,10 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as Minio from 'minio';
 import 'multer';
 
 /**
@@ -17,26 +19,37 @@ import 'multer';
  * - Secret Key: minioadmin
  */
 @Injectable()
-export class FileUploadService {
-  private minioEndpoint: string;
-  private minioAccessKey: string;
-  private minioSecretKey: string;
+export class FileUploadService implements OnModuleInit {
+  private minioClient: Minio.Client;
   private minioBucket: string;
 
   constructor(private configService: ConfigService) {
-    this.minioEndpoint = this.configService.get(
-      'MINIO_ENDPOINT',
-      'http://localhost:9000',
-    );
-    this.minioAccessKey = this.configService.get(
-      'MINIO_ACCESS_KEY',
-      'minioadmin',
-    );
-    this.minioSecretKey = this.configService.get(
-      'MINIO_SECRET_KEY',
-      'minioadmin',
-    );
-    this.minioBucket = this.configService.get('MINIO_BUCKET', 'recruitment');
+    const endPoint = this.configService.get('MINIO_ENDPOINT', 'localhost');
+    const port = parseInt(this.configService.get('MINIO_PORT', '9000'), 10);
+    const accessKey = this.configService.get('MINIO_ACCESS_KEY', 'minioadmin');
+    const secretKey = this.configService.get('MINIO_SECRET_KEY', 'minioadmin');
+    this.minioBucket = this.configService.get('MINIO_BUCKET_NAME', 'cv-storage');
+
+    this.minioClient = new Minio.Client({
+      endPoint,
+      port,
+      useSSL: false,
+      accessKey,
+      secretKey,
+    });
+  }
+
+  async onModuleInit() {
+    // Ensure bucket exists on startup
+    try {
+      const exists = await this.minioClient.bucketExists(this.minioBucket);
+      if (!exists) {
+        await this.minioClient.makeBucket(this.minioBucket, 'us-east-1');
+        console.log(`Created MinIO bucket: ${this.minioBucket}`);
+      }
+    } catch (error) {
+      console.error('MinIO bucket initialization error:', error);
+    }
   }
 
   /**
@@ -80,7 +93,6 @@ export class FileUploadService {
     }
 
     try {
-      await Promise.resolve(); // Simulate async operation
       // Extract file extension
       const ext = file.originalname.split('.').pop()?.toLowerCase();
       const fileType = ext === 'pdf' ? 'PDF' : 'DOCX';
@@ -90,48 +102,56 @@ export class FileUploadService {
       const fileName = `cv-${userId}-${timestamp}.${ext}`;
       const objectName = `resumes/${fileName}`;
 
-      // TODO: Implement actual MinIO upload
-      // For now, return a mock S3-style URL
-      const fileUrl = `${this.minioEndpoint}/${this.minioBucket}/${objectName}`;
+      // Actual MinIO upload
+      await this.minioClient.putObject(
+        this.minioBucket,
+        objectName,
+        file.buffer,
+        file.size,
+        { 'Content-Type': file.mimetype },
+      );
 
-      // In production:
-      // await minioClient.putObject(
-      //   this.minioBucket,
-      //   objectName,
-      //   file.buffer,
-      //   file.size,
-      //   { 'Content-Type': file.mimetype }
-      // );
-
+      // We store the object name in the DB, not the full URL, 
+      // because we'll generate presigned URLs for viewing
       return {
-        fileUrl,
+        fileUrl: objectName, // Store object name as the "URL" reference
         fileName: file.originalname,
         fileType,
       };
     } catch (error) {
-      console.error('MinIO upload error:', error);
-      throw new InternalServerErrorException('Lỗi tải file lên hệ thống');
+      console.error('MinIO upload error details:', error);
+      throw new InternalServerErrorException(`Lỗi tải file lên hệ thống: ${error.message}`);
     }
   }
 
   /**
-   * Get file download URL
+   * Get file download URL (Presigned)
    */
-  getDownloadUrl(fileName: string): string {
-    return `${this.minioEndpoint}/${this.minioBucket}/resumes/${fileName}`;
+  async getDownloadUrl(objectName: string): Promise<string> {
+    try {
+      // Generate a presigned URL valid for 1 hour (3600 seconds)
+      return await this.minioClient.presignedGetObject(
+        this.minioBucket,
+        objectName,
+        3600,
+      );
+    } catch (error) {
+      console.error('MinIO presigned URL error:', error);
+      return ''; // Fallback or handle error
+    }
   }
 
   /**
    * Delete file from MinIO
    */
-  deleteFile(objectName: string): void {
+  async deleteFile(objectName: string): Promise<void> {
     try {
-      // TODO: Implement actual MinIO delete
-      // await minioClient.removeObject(this.minioBucket, objectName);
-      console.log(`Deleted file: ${objectName}`);
+      await this.minioClient.removeObject(this.minioBucket, objectName);
+      console.log(`Deleted file from MinIO: ${objectName}`);
     } catch (error) {
       console.error('MinIO delete error:', error);
-      throw new InternalServerErrorException('Lỗi xóa file');
+      // We don't necessarily want to crash the whole request if delete fails, 
+      // but we log it.
     }
   }
 }

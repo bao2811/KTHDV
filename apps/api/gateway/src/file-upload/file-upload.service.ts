@@ -24,10 +24,16 @@ export class FileUploadService {
   private minioBucket: string;
 
   constructor(private configService: ConfigService) {
-    this.minioEndpoint = this.configService.get(
-      'MINIO_ENDPOINT',
-      'http://localhost:9000',
-    );
+    const rawEndpoint = this.configService.get('MINIO_ENDPOINT', 'localhost');
+    const port = this.configService.get('MINIO_PORT', '9000');
+    
+    // Đảm bảo endpoint có http:// và port nếu chạy local
+    if (rawEndpoint.startsWith('http')) {
+      this.minioEndpoint = rawEndpoint;
+    } else {
+      this.minioEndpoint = `http://${rawEndpoint}:${port}`;
+    }
+
     this.minioAccessKey = this.configService.get(
       'MINIO_ACCESS_KEY',
       'minioadmin',
@@ -36,7 +42,7 @@ export class FileUploadService {
       'MINIO_SECRET_KEY',
       'minioadmin',
     );
-    this.minioBucket = this.configService.get('MINIO_BUCKET', 'recruitment');
+    this.minioBucket = this.configService.get('MINIO_BUCKET_NAME', 'cv-storage');
   }
 
   /**

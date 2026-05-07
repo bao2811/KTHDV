@@ -184,15 +184,31 @@ export class FileUploadController {
       where: { id: parseInt(resumeId, 10) },
     });
 
-    if (!resume || resume.userId !== userId) {
-      return res.status(403).json({ message: 'Không có quyền' });
+    if (!resume) {
+      return res.status(404).json({ message: 'CV không tồn tại' });
     }
 
-    // Redirect to MinIO file
+    if (resume.userId !== userId) {
+      // Kiểm tra xem user hiện tại có phải là nhà tuyển dụng sở hữu job mà ứng viên nộp CV này không
+      const application = await this.prisma.application.findFirst({
+        where: {
+          resumeId: resume.id,
+          job: {
+            createdByUserId: userId,
+          },
+        },
+      });
+
+      if (!application) {
+        return res.status(403).json({ message: 'Bạn không có quyền xem CV này' });
+      }
+    }
+
+    // Return JSON with URL instead of redirecting to avoid CORS issues in AJAX
     const downloadUrl = this.fileUploadService.getDownloadUrl(
       resume.fileUrl.split('/').pop() || '',
     );
-    res.redirect(downloadUrl);
+    return res.json({ success: true, url: downloadUrl });
   }
 
   /**
@@ -210,8 +226,24 @@ export class FileUploadController {
       where: { id: parseInt(resumeId, 10) },
     });
 
-    if (!resume || resume.userId !== userId) {
-      return res.status(403).json({ message: 'Không có quyền' });
+    if (!resume) {
+      return res.status(404).json({ message: 'CV không tồn tại' });
+    }
+
+    if (resume.userId !== userId) {
+      // Kiểm tra xem user hiện tại có phải là nhà tuyển dụng sở hữu job mà ứng viên nộp CV này không
+      const application = await this.prisma.application.findFirst({
+        where: {
+          resumeId: resume.id,
+          job: {
+            createdByUserId: userId,
+          },
+        },
+      });
+
+      if (!application) {
+        return res.status(403).json({ message: 'Bạn không có quyền xem CV này' });
+      }
     }
 
     // Extract filename from the full path
@@ -220,8 +252,8 @@ export class FileUploadController {
       return res.status(400).json({ message: 'File name không hợp lệ' });
     }
 
-    // Redirect to MinIO file
+    // Return JSON with URL instead of redirecting
     const downloadUrl = this.fileUploadService.getDownloadUrl(fileName);
-    res.redirect(downloadUrl);
+    return res.json({ success: true, url: downloadUrl });
   }
 }

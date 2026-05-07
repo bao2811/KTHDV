@@ -12,10 +12,13 @@ import {
   UseInterceptors,
   Request,
   Inject,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import FormData from 'form-data';
 import type { IServiceProxy } from '../interfaces/service-proxy.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { SERVICE_PROXY } from '../proxy.constants';
@@ -199,15 +202,22 @@ export class CandidateProxyController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
-    // For file upload, would need special handling
-    // For now, forward to service endpoint
+    const formData = new FormData();
+    formData.append('file', file.buffer, {
+      filename: file.originalname,
+      contentType: file.mimetype,
+    });
+    formData.append('userId', userId.toString());
+
     return this.proxy.post(
       `${CANDIDATE_SERVICE_URL}/upload/cv`,
+      formData,
       {
-        file,
-        userId,
+        headers: {
+          ...getAuthConfig(req).headers,
+          ...formData.getHeaders(),
+        },
       },
-      getAuthConfig(req),
     );
   }
 
@@ -230,10 +240,33 @@ export class CandidateProxyController {
 
   @Delete('resumes/:id')
   async deleteCV(@Request() req: any, @Param('id') id: number) {
-    return this.proxy.delete(
+    return this.proxy.get(
       `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/delete`,
       getAuthConfig(req),
     );
+  }
+
+  @Get('resumes/:id/download')
+  @ApiOperation({ summary: 'Tải/Xem CV (Trả về link MinIO presigned)' })
+  async downloadCV(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Res() res: Response,
+  ) {
+    // We call the candidate service which now returns a JSON with { success: true, url: '...' }
+    // but the original controller used res.redirect. 
+    // Let's assume we want to proxy the JSON response or redirect directly.
+    // To avoid CORS in Swagger, we'll return the JSON URL.
+    const result = await this.proxy.get(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/download`,
+      getAuthConfig(req),
+    );
+    
+    // If it's a redirect from the candidate service, it might be tricky to proxy.
+    // But I just changed candidate service to use JSON if I want, or I can just 
+    // let it redirect and this proxy will handle it.
+    // Wait, the http-proxy-service returns response.data.
+    return res.json(result);
   }
 
   // Applications
