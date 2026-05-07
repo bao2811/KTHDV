@@ -6,54 +6,37 @@ import Link from 'next/link';
 // --- MOCK DATA ---
 const mockJob = {
   id: 'job-1',
-  title: 'Senior Frontend Developer (React/Next.js)',
+  title: 'Kỹ sư Frontend Cao cấp',
+  location: 'Hà Nội (Hybrid)',
+  type: 'Toàn thời gian',
   stats: {
-    total: 45,
-    matched: 12,
-    interviewing: 5,
-    offered: 1
+    total: 24,
   }
 };
 
 const mockApplicants = [
-  { id: 'c-1', name: 'Nguyễn Văn A', email: 'a@test.com', score: 95, status: 'SUBMITTED', date: '01/05/2026' },
-  { id: 'c-2', name: 'Trần Thị B', email: 'b@test.com', score: 80, status: 'SUBMITTED', date: '02/05/2026' },
-  { id: 'c-3', name: 'Lê Văn C', email: 'c@test.com', score: 88, status: 'MATCHED', date: '01/05/2026' },
-  { id: 'c-4', name: 'Phạm Thị D', email: 'd@test.com', score: 92, status: 'INTERVIEWING', date: '28/04/2026' },
-  { id: 'c-5', name: 'Vũ Văn E', email: 'e@test.com', score: 85, status: 'OFFERED', date: '20/04/2026' },
-  { id: 'c-6', name: 'Hoàng Văn F', email: 'f@test.com', score: null, status: 'SUBMITTED', date: '05/05/2026' },
+  { id: 'c-1', name: 'Nguyễn Thị Lan Anh', title: 'Trưởng nhóm Phát triển tại TechNova', initials: 'LA', score: 98, status: 'PHỎNG VẤN KỸ THUẬT', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAniwSa4bqbr7z5uI5If5O0NBXymHnPwIyXI8jgHjXTNaAgLAx69bc879flA4ycxsDZsGYMQ65N91KrZNT5MqiT0VRw6w5Fp57HK4IqZARjVr0xrQgwH1yR1wYzZYDO8mvNhaqmECqMEI79GaPXmVevOu2zcBpGtcqNdGJIl07HL0lOYPYf7Kmfu3qXErRzeTRZ-bX8tMMaKi5OIbXAZmGjcL8cViSEWAXF95gr3B_mthPiYCUlK0CD7wsUs9OXl7ZpLx24FZhtWQcn' },
+  { id: 'c-2', name: 'Trần Minh Hoàng', title: 'Kỹ sư Frontend tại CloudSync', initials: 'MH', score: 85, status: 'SƠ VẤN QUA ĐIỆN THOẠI', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDTXCYy4m6JYd2otuEXtFzw5BqKvPKdO2mdu9sCgiXW-GlVPIZ3VOo3nCb0B8qaDhb7_0eXh_UFzirtOFxaUJ1IfGRhFmFLRHbwRFUZ8SqB2cpShShEqYY53_SY0jSWSXotNqnN1f4RIH0jFpAFJgpHE_ZOf41LCN5SSMbA1e_YeGbrPvybXf5VqCj9HZS3DFijqwUSharffB6gx0Ys7RQnSZCX9XgmZ_Dh4FCrN2jH_Ipg97sIM0oaeA9yZ_1npedE4MsMKUvAMRza' },
+  { id: 'c-3', name: 'Phạm Hồng Phúc', title: 'Lập trình viên UI tại CreativeMinds', initials: 'HP', score: 62, status: 'ĐÃ ỨNG TUYỂN', img: '' },
+  { id: 'c-4', name: 'Lê Văn Nam', title: 'Kỹ sư Phần mềm tại InnoTech', initials: 'VN', score: null, status: 'ĐÃ GỬI', img: '' },
 ];
 
 const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'SUBMITTED':
-      return <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">Đã nộp</span>;
-    case 'MATCHED':
-      return <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">So khớp</span>;
-    case 'INTERVIEWING':
-      return <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">Phỏng vấn</span>;
-    case 'OFFERED':
-      return <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Nhận Offer</span>;
-    case 'REJECTED':
-      return <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Từ chối</span>;
-    default:
-      return <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">{status}</span>;
-  }
+  return (
+    <span className="inline-flex items-center px-3 py-1 rounded-full bg-surface-variant text-on-surface-variant font-label-bold text-label-bold uppercase">
+      {status}
+    </span>
+  );
 };
 
 export default function JobApplicantsList() {
   const [applicants, setApplicants] = useState(mockApplicants);
-  const [activeFilter, setActiveFilter] = useState('ALL');
   const [isMatching, setIsMatching] = useState(false);
 
-  const filteredApplicants = activeFilter === 'ALL' 
-    ? applicants 
-    : applicants.filter(a => a.status === activeFilter);
-
   const handleRunMatch = (id: string) => {
-    // Giả lập chạy so khớp cho 1 ứng viên
+    // Simulate matching for 1 applicant
     const btn = document.getElementById(`btn-match-${id}`);
-    if (btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px]">refresh</span>';
+    if (btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[16px] mr-1">refresh</span> Đang so khớp...';
     
     setTimeout(() => {
       setApplicants(prev => prev.map(c => {
@@ -75,135 +58,141 @@ export default function JobApplicantsList() {
         return c;
       }));
       setIsMatching(false);
-      alert('Đã chạy so khớp cho tất cả ứng viên mới!');
     }, 2000);
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-2 text-sm text-slate-500 mb-4">
-        <Link href="/hr/jobs" className="hover:text-[#3525cd]">Tin tuyển dụng</Link>
-        <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-        <span className="text-slate-900 font-medium">Danh sách ứng viên</span>
-      </div>
-
-      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{mockJob.title}</h1>
-          <p className="text-slate-500 mt-1">Danh sách ứng viên đã nộp hồ sơ cho vị trí này.</p>
+    <div className="flex-1 flex flex-col gap-stack-gap-lg">
+      {/* Breadcrumb & Actions */}
+      <div className="flex justify-between items-center mb-2">
+        <div className="flex items-center space-x-2 text-sm text-on-surface-variant">
+          <Link href="/hr/jobs" className="hover:text-primary transition-colors">Tin tuyển dụng</Link>
+          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="text-on-surface font-medium">Ứng viên</span>
         </div>
-        <div className="flex space-x-3">
+        <div className="flex gap-3">
           <Link 
             href="/hr/pipeline" 
-            className="px-4 py-2 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 transition-colors shadow-sm flex items-center"
+            className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-surface-variant rounded-lg font-label-bold text-label-bold text-on-surface hover:bg-surface-container-low transition-colors shadow-sm"
           >
-            <span className="material-symbols-outlined text-[18px] mr-1">view_kanban</span>
-            Xem Kanban
+            <span className="material-symbols-outlined text-sm">view_kanban</span>
+            Xem quy trình
           </Link>
           <button 
             onClick={handleRunAll}
             disabled={isMatching}
-            className="px-4 py-2 bg-[#3525cd] text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center disabled:opacity-50"
+            className="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors font-label-bold text-label-bold shadow-sm disabled:opacity-50 flex items-center"
           >
             {isMatching ? (
-              <><span className="material-symbols-outlined animate-spin text-[18px] mr-1">refresh</span> Đang chạy...</>
+              <><span className="material-symbols-outlined animate-spin text-[18px] mr-2">refresh</span> Đang so khớp...</>
             ) : (
-              <><span className="material-symbols-outlined text-[18px] mr-1">psychology</span> Chạy so khớp (Tất cả)</>
+              <><span className="material-symbols-outlined text-[18px] mr-2">psychology</span> So khớp tất cả</>
             )}
           </button>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
-          <p className="text-sm text-slate-500 font-medium">Tổng ứng viên</p>
-          <p className="text-2xl font-bold text-slate-900">{mockJob.stats.total}</p>
+      {/* Page Header */}
+      <div className="flex justify-between items-end pb-stack-gap-md border-b border-surface-variant">
+        <div>
+          <p className="font-label-bold text-label-bold text-primary mb-2 uppercase tracking-wider">Vị trí đang tuyển</p>
+          <h1 className="font-headline-xl text-headline-xl text-on-background mb-2">{mockJob.title}</h1>
+          <p className="font-body-md text-body-md text-on-surface-variant flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">location_on</span> {mockJob.location}
+            <span className="px-2 text-surface-variant">•</span>
+            <span className="material-symbols-outlined text-sm">work</span> {mockJob.type}
+          </p>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
-          <p className="text-sm text-slate-500 font-medium">Đã khớp (>60%)</p>
-          <p className="text-2xl font-bold text-blue-600">{mockJob.stats.matched}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
-          <p className="text-sm text-slate-500 font-medium">Phỏng vấn</p>
-          <p className="text-2xl font-bold text-amber-600">{mockJob.stats.interviewing}</p>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm text-center">
-          <p className="text-sm text-slate-500 font-medium">Offer</p>
-          <p className="text-2xl font-bold text-green-600">{mockJob.stats.offered}</p>
+        <div className="flex items-center gap-stack-gap-md">
+          <div className="bg-surface-container-low px-4 py-2 rounded-lg border border-surface-variant flex items-center gap-2">
+            <span className="font-label-bold text-label-bold text-on-surface-variant">Tổng số ứng viên</span>
+            <span className="font-headline-lg text-headline-lg text-primary">{mockJob.stats.total}</span>
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-lowest border border-surface-variant rounded-lg font-label-bold text-label-bold text-on-surface hover:bg-surface-container-low transition-colors shadow-sm">
+            <span className="material-symbols-outlined text-sm">filter_list</span>
+            Bộ lọc
+          </button>
         </div>
       </div>
 
-      {/* Main Table Area */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex gap-2 overflow-x-auto hide-scrollbar">
-          {['ALL', 'SUBMITTED', 'MATCHED', 'INTERVIEWING', 'OFFERED', 'REJECTED'].map(status => (
-            <button
-              key={status}
-              onClick={() => setActiveFilter(status)}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                activeFilter === status 
-                  ? 'bg-[#3525cd] text-white' 
-                  : 'bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-[#3525cd]'
-              }`}
-            >
-              {status === 'ALL' ? 'Tất cả' : getStatusBadge(status).props.children}
-            </button>
-          ))}
-        </div>
+      {/* Applicant List (Premium Bento/Card Style) */}
+      <div className="flex flex-col gap-stack-gap-md">
+        {applicants.map((candidate) => (
+          <div key={candidate.id} className="bg-surface-container-lowest rounded-xl shadow-ambient p-stack-gap-md border border-surface-variant/50 hover:border-primary/30 transition-all duration-200 grid grid-cols-12 gap-grid-gutter items-center group">
+            {/* Profile Info */}
+            <div className="col-span-4 flex items-center gap-stack-gap-md">
+              <div className="w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-surface-variant flex items-center justify-center text-on-surface-variant font-headline-lg text-headline-lg font-bold">
+                {candidate.img ? (
+                  <img alt={`${candidate.name} Profile`} className="w-full h-full object-cover" src={candidate.img} />
+                ) : (
+                  candidate.initials
+                )}
+              </div>
+              <div>
+                <h3 className="font-body-md text-body-md text-on-surface font-semibold">{candidate.name}</h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{candidate.title}</p>
+              </div>
+            </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-100">
-                <th className="px-6 py-4 font-medium">Ứng viên</th>
-                <th className="px-6 py-4 font-medium">Ngày nộp</th>
-                <th className="px-6 py-4 font-medium">Match Score</th>
-                <th className="px-6 py-4 font-medium">Trạng thái</th>
-                <th className="px-6 py-4 font-medium text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredApplicants.map((candidate) => (
-                <tr key={candidate.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-slate-900">{candidate.name}</div>
-                    <div className="text-sm text-slate-500">{candidate.email}</div>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-600">{candidate.date}</td>
-                  <td className="px-6 py-4">
-                    {candidate.score !== null ? (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-20 h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full rounded-full ${candidate.score >= 80 ? 'bg-green-500' : candidate.score >= 60 ? 'bg-amber-500' : 'bg-red-500'}`}
-                            style={{ width: `${candidate.score}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-bold text-slate-700">{candidate.score}</span>
-                      </div>
-                    ) : (
-                      <button 
-                        id={`btn-match-${candidate.id}`}
-                        onClick={() => handleRunMatch(candidate.id)}
-                        className="text-xs px-2 py-1 bg-indigo-50 text-[#3525cd] font-medium rounded hover:bg-indigo-100 transition-colors flex items-center"
-                      >
-                        <span className="material-symbols-outlined text-[14px] mr-1">psychology</span>
-                        So khớp ngay
-                      </button>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">{getStatusBadge(candidate.status)}</td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-sm font-medium text-[#3525cd] hover:bg-indigo-50 px-3 py-1.5 rounded transition-colors">
-                      Chi tiết CV
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            {/* Match Score */}
+            <div className="col-span-3 flex flex-col gap-2">
+              {candidate.score !== null ? (
+                <>
+                  <div className="flex justify-between items-end">
+                    <span className="font-label-bold text-label-bold text-on-surface-variant uppercase">Điểm so khớp</span>
+                    <span className="font-headline-lg text-headline-lg text-primary leading-none">{candidate.score}%</span>
+                  </div>
+                  <div className="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${candidate.score}%` }}></div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-start h-full pt-2">
+                  <button 
+                    id={`btn-match-${candidate.id}`}
+                    onClick={() => handleRunMatch(candidate.id)}
+                    className="flex items-center gap-1 text-sm font-label-bold text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-sm">psychology</span>
+                    Chạy so khớp
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Status */}
+            <div className="col-span-2 flex justify-center">
+              {getStatusBadge(candidate.status)}
+            </div>
+
+            {/* Actions */}
+            <div className="col-span-3 flex justify-end items-center gap-stack-gap-sm opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              <Link 
+                href={`/hr/candidates/${candidate.id}`}
+                className="px-3 py-2 rounded-lg text-primary hover:bg-primary/10 transition-colors font-label-bold text-label-bold flex items-center gap-1"
+              >
+                Hồ sơ
+              </Link>
+              {candidate.score === null ? (
+                <button disabled className="px-4 py-2 rounded-lg bg-surface-variant text-on-surface-variant font-label-bold text-label-bold opacity-50 cursor-not-allowed border border-transparent">
+                  Xem xét
+                </button>
+              ) : candidate.status === 'ĐÃ ỨNG TUYỂN' || candidate.status === 'ĐÃ GỬI' ? (
+                <button className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors font-label-bold text-label-bold shadow-sm border border-surface-variant">
+                  Xem xét
+                </button>
+              ) : candidate.status === 'SƠ VẤN QUA ĐIỆN THOẠI' ? (
+                <button className="px-4 py-2 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors font-label-bold text-label-bold shadow-sm border border-surface-variant">
+                  Tiếp tục
+                </button>
+              ) : (
+                <button className="px-4 py-2 rounded-lg bg-primary text-on-primary hover:bg-primary/90 transition-colors font-label-bold text-label-bold shadow-sm">
+                  Mời việc
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

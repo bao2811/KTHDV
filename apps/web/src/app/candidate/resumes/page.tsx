@@ -6,17 +6,19 @@ import { useState } from 'react';
 const mockResumes = [
   {
     id: 'cv-1',
-    fileName: 'Nguyen_Van_A_Frontend_CV.pdf',
+    fileName: 'Nguyen_Van_A_Frontend_CV_Tiếng_Việt.pdf',
     fileType: 'PDF',
-    uploadedAt: '2026-05-01',
+    uploadedAt: '24 Thg 10, 2025',
     isPrimary: true,
+    size: '1.2 MB'
   },
   {
     id: 'cv-2',
-    fileName: 'Nguyen_Van_A_Resume_English.docx',
+    fileName: 'Nguyen_Van_A_CV_Tiếng_Anh.docx',
     fileType: 'DOCX',
-    uploadedAt: '2026-04-15',
+    uploadedAt: '15 Thg 09, 2025',
     isPrimary: false,
+    size: '850 KB'
   },
 ];
 
@@ -52,104 +54,137 @@ export default function CandidateResumes() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="p-container-padding max-w-7xl mx-auto w-full space-y-stack-gap-lg">
+      
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Quản lý CV</h1>
-        <p className="text-slate-500 mt-1">Tải lên các bản CV của bạn để sẵn sàng ứng tuyển.</p>
+        <h2 className="font-headline-xl text-headline-xl font-bold text-on-surface">CV của tôi</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-1">Quản lý và cập nhật các bản CV để tối ưu cơ hội nghề nghiệp.</p>
       </div>
 
       {/* Upload Zone */}
       <div 
-        className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center transition-all bg-white ${
-          isDragging ? 'border-[#3525cd] bg-indigo-50/50' : 'border-indigo-200 hover:border-[#3525cd]'
+        className={`relative border-2 border-dashed rounded-2xl p-12 flex flex-col items-center justify-center transition-all duration-300 group overflow-hidden ${
+          isDragging 
+            ? 'border-primary bg-primary/5' 
+            : 'border-outline-variant hover:border-primary/50 hover:bg-surface-container-low'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <div className="w-16 h-16 bg-indigo-50 text-[#3525cd] rounded-full flex items-center justify-center mb-4">
-          <span className="material-symbols-outlined text-3xl">upload_file</span>
+        <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 transition-all duration-300 ${
+          isDragging ? 'bg-primary text-on-primary scale-110' : 'bg-primary/10 text-primary group-hover:scale-110'
+        }`}>
+          <span className="material-symbols-outlined text-[40px] font-variation-fill">cloud_upload</span>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 mb-1">Tải lên CV mới</h3>
-        <p className="text-slate-500 text-sm mb-4 text-center max-w-sm">
-          Kéo thả file PDF/DOCX vào đây hoặc click để chọn file từ máy tính của bạn. Dung lượng tối đa 10MB.
+        <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface mb-2">Tải lên CV mới</h3>
+        <p className="font-body-md text-body-md text-on-surface-variant text-center max-w-md mb-6">
+          Kéo thả file <span className="font-bold text-primary">PDF</span> hoặc <span className="font-bold text-primary">DOCX</span> vào đây.
+          <br />Dung lượng tối đa 10MB.
         </p>
-        <button className="px-6 py-2.5 bg-white border border-slate-200 text-slate-700 font-medium rounded-lg hover:bg-slate-50 hover:text-[#3525cd] hover:border-[#3525cd] transition-all shadow-sm">
-          Chọn file
+        <button className="px-8 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:bg-primary/90 transition-all shadow-md active:scale-95 flex items-center gap-2">
+          <span className="material-symbols-outlined text-[20px]">add</span>
+          Chọn file từ máy tính
         </button>
+        
+        {/* Decorative background element */}
+        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl -z-10 group-hover:scale-150 transition-transform duration-700"></div>
       </div>
 
-      {/* CV List */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-900">CV đã tải lên ({resumes.length})</h2>
+      {/* CV List Section */}
+      <div className="space-y-stack-gap-md">
+        <div className="flex items-center justify-between">
+          <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bản CV hiện có ({resumes.length})</h3>
+          <span className="text-on-surface-variant font-body-sm text-body-sm">Cập nhật lần cuối: Hôm nay</span>
+        </div>
         
         {resumes.length === 0 ? (
-          <div className="bg-white p-10 rounded-xl border border-slate-100 text-center">
-            <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">find_in_page</span>
-            <p className="text-slate-500">Chưa có CV nào được tải lên.</p>
+          <div className="bg-surface-container-lowest p-16 rounded-2xl border border-surface-variant/50 text-center flex flex-col items-center">
+            <div className="w-20 h-20 bg-surface-container rounded-full flex items-center justify-center mb-4 opacity-50">
+              <span className="material-symbols-outlined text-[48px] text-outline">description</span>
+            </div>
+            <p className="font-body-md text-body-md text-on-surface-variant">Chưa có CV nào được tải lên.</p>
+            <button className="mt-4 text-primary font-label-bold text-label-bold hover:underline">Bắt đầu tải lên</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-grid-gutter">
             {resumes.map((resume) => (
-              <div key={resume.id} className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-1">
-                      {resume.fileType === 'PDF' ? (
-                        <span className="material-symbols-outlined text-red-500 text-3xl">picture_as_pdf</span>
-                      ) : (
-                        <span className="material-symbols-outlined text-blue-500 text-3xl">description</span>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 line-clamp-1" title={resume.fileName}>
-                        {resume.fileName}
-                      </h3>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
-                          resume.fileType === 'PDF' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700'
-                        }`}>
-                          {resume.fileType}
-                        </span>
-                        <span className="text-xs text-slate-500">{resume.uploadedAt}</span>
-                      </div>
-                    </div>
+              <div 
+                key={resume.id} 
+                className="bg-surface-container-lowest p-6 rounded-2xl shadow-ambient-card border border-surface-variant/50 hover:border-primary/30 transition-all group flex flex-col h-full"
+              >
+                <div className="flex justify-between items-start mb-6">
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center shrink-0 transition-transform group-hover:rotate-6 ${
+                    resume.fileType === 'PDF' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    <span className="material-symbols-outlined text-[32px] font-variation-fill">
+                      {resume.fileType === 'PDF' ? 'picture_as_pdf' : 'description'}
+                    </span>
                   </div>
-                </div>
-
-                <div className="mt-auto flex items-center justify-between pt-4 border-t border-slate-100">
-                  <div>
-                    {resume.isPrimary ? (
-                      <span className="inline-flex items-center space-x-1 px-2.5 py-1 bg-[#3525cd]/10 text-[#3525cd] text-xs font-medium rounded-full">
-                        <span className="material-symbols-outlined text-[14px]">check_circle</span>
-                        <span>Mặc định</span>
-                      </span>
-                    ) : (
-                      <button 
-                        onClick={() => handleSetPrimary(resume.id)}
-                        className="text-xs font-medium text-slate-500 hover:text-[#3525cd] transition-colors"
-                      >
-                        Đặt làm mặc định
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex space-x-2">
-                    <button className="p-1.5 text-slate-400 hover:text-[#3525cd] hover:bg-indigo-50 rounded-md transition-colors" title="Tải về">
-                      <span className="material-symbols-outlined text-[20px]">download</span>
-                    </button>
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                       onClick={() => handleDelete(resume.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" 
+                      className="p-2 text-outline hover:text-error transition-colors"
                       title="Xóa"
                     >
                       <span className="material-symbols-outlined text-[20px]">delete</span>
                     </button>
                   </div>
                 </div>
+
+                <div className="flex-1">
+                  <h4 className="font-body-md text-body-md font-bold text-on-surface line-clamp-1 mb-1" title={resume.fileName}>
+                    {resume.fileName}
+                  </h4>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
+                      resume.fileType === 'PDF' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                    }`}>
+                      {resume.fileType}
+                    </span>
+                    <span className="text-on-surface-variant font-label-bold text-[11px] uppercase opacity-70">
+                      {resume.size} • {resume.uploadedAt}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-surface-variant/50 flex items-center justify-between">
+                  {resume.isPrimary ? (
+                    <div className="flex items-center gap-1.5 text-primary">
+                      <span className="material-symbols-outlined text-[18px] font-variation-fill">verified</span>
+                      <span className="font-label-bold text-label-bold">CV chính</span>
+                    </div>
+                  ) : (
+                    <button 
+                      onClick={() => handleSetPrimary(resume.id)}
+                      className="font-label-bold text-label-bold text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                      Đặt làm mặc định
+                    </button>
+                  )}
+                  <button className="p-2 text-primary hover:bg-primary/5 rounded-lg transition-colors" title="Download">
+                    <span className="material-symbols-outlined text-[22px]">download</span>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      {/* Tips Card */}
+      <div className="bg-surface-container-high rounded-2xl p-6 flex items-start gap-4 border border-surface-variant/30">
+        <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-[24px]">lightbulb</span>
+        </div>
+        <div>
+          <h4 className="font-body-md text-body-md font-bold text-on-surface">Mẹo nhỏ cho bạn</h4>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mt-1 leading-relaxed">
+            Sử dụng CV định dạng PDF để đảm bảo định dạng của bạn không bị thay đổi khi nhà tuyển dụng xem trên các thiết bị khác nhau. Đừng quên đặt CV hoàn thiện nhất làm mặc định để ứng tuyển nhanh chóng hơn!
+          </p>
+        </div>
       </div>
     </div>
   );

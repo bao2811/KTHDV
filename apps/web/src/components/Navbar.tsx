@@ -27,10 +27,10 @@ export default function Navbar() {
           Nexus Talent
         </Link>
         <nav className="hidden md:flex items-center gap-6">
-          <Link href="/" className="text-indigo-600 font-semibold">Home</Link>
-          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Solutions</Link>
-          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Talent Pool</Link>
-          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Pricing</Link>
+          <Link href="/" className="text-indigo-600 font-semibold">Trang chủ</Link>
+          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Giải pháp</Link>
+          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Mạng lưới tài năng</Link>
+          <Link href="#" className="text-slate-500 hover:text-slate-900 transition-all duration-200">Bảng giá</Link>
         </nav>
       </div>
       <div className="flex items-center gap-4">
@@ -44,7 +44,7 @@ export default function Navbar() {
               onClick={handleLogout}
               className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
             >
-              Logout
+              Đăng xuất
             </button>
             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-primary font-bold overflow-hidden border border-indigo-200">
               {user.email[0].toUpperCase()}
@@ -56,13 +56,13 @@ export default function Navbar() {
               href="/login" 
               className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
             >
-              Log in
+              Đăng nhập
             </Link>
             <Link 
               href="/register" 
               className="px-4 py-2 bg-primary text-white rounded-lg font-semibold hover:bg-primary-container transition-all shadow-sm active:scale-95"
             >
-              Get Started
+              Bắt đầu ngay
             </Link>
           </>
         )}

@@ -1,115 +1,184 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 
 // --- MOCK DATA ---
-const mockInterviews = [
-  { id: 'int-1', candidateName: 'Nguyễn Văn A', position: 'Senior Frontend', time: '10:00 - 11:00', type: 'ONLINE', status: 'SCHEDULED', date: '08/05/2026' },
-  { id: 'int-2', candidateName: 'Trần Thị B', position: 'Backend Engineer', time: '14:00 - 15:00', type: 'IN_PERSON', status: 'SCHEDULED', date: '08/05/2026' },
-  { id: 'int-3', candidateName: 'Lê Văn C', position: 'UI/UX Designer', time: '09:00 - 10:00', type: 'ONLINE', status: 'COMPLETED', date: '07/05/2026' },
+const DAYS = [
+  { id: 'mon', name: 'Thứ 2, 23', isToday: false },
+  { id: 'tue', name: 'Thứ 3, 24', isToday: true },
+  { id: 'wed', name: 'Thứ 4, 25', isToday: false },
+  { id: 'thu', name: 'Thứ 5, 26', isToday: false },
+  { id: 'fri', name: 'Thứ 6, 27', isToday: false },
+];
+
+const mockScheduled = [
+  {
+    id: 'int-1',
+    day: 'mon',
+    time: '09:00 - 10:00',
+    candidateName: 'Nguyễn Thị Minh',
+    position: 'Kỹ sư Frontend Cao cấp',
+    interviewerInitials: 'MS',
+    interviewerName: 'Minh Sơn',
+    colorClass: 'border-primary',
+    bgClass: 'bg-surface-container-low'
+  },
+  {
+    id: 'int-2',
+    day: 'tue',
+    time: '11:30 - 12:30',
+    candidateName: 'Trần Văn Đạt',
+    position: 'Quản lý Sản phẩm',
+    interviewerInitials: 'AL',
+    interviewerName: 'Anh Lan',
+    colorClass: 'border-slate-800',
+    bgClass: 'bg-surface-container-lowest shadow-sm'
+  },
+  {
+    id: 'int-3',
+    day: 'wed',
+    time: '14:00 - 15:00',
+    candidateName: 'Lê Thu Hương',
+    position: 'Thiết kế UX',
+    interviewerInitials: 'MS',
+    interviewerName: 'Minh Sơn',
+    colorClass: 'border-slate-500',
+    bgClass: 'bg-surface-container-low'
+  }
+];
+
+const mockPending = [
+  { id: 'pend-1', name: 'Phạm Thành Long', role: 'Khoa học dữ liệu', tag1: 'Kỹ thuật', tag2: '60 Phút' },
+  { id: 'pend-2', name: 'Hoàng Mai Anh', role: 'Giám đốc Marketing', tag1: 'Vòng cuối', tag1Color: 'bg-slate-200 text-slate-800', tag2: '45 Phút' },
+  { id: 'pend-3', name: 'Vũ Quốc Bảo', role: 'Kỹ sư DevOps', tag1: 'Sàng lọc', tag2: '30 Phút' },
 ];
 
 export default function HRInterviews() {
-  const [currentWeek] = useState('04/05/2026 - 10/05/2026');
-
-  // Lịch đơn giản (mock)
-  const days = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6'];
-  const times = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'];
+  const [currentWeek] = useState('23 Th10 - 27 Th10');
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+    <div className="flex-1 flex flex-col h-full -mx-container-padding -my-container-padding">
+      {/* Page Header */}
+      <div className="px-container-padding py-stack-gap-lg flex flex-col md:flex-row md:justify-between md:items-center gap-4 bg-surface border-b border-surface-variant/50 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Lịch Phỏng Vấn</h1>
-          <p className="text-slate-500 mt-1">Quản lý và theo dõi lịch phỏng vấn với ứng viên.</p>
+          <h2 className="font-headline-xl text-headline-xl text-on-surface">Lịch phỏng vấn</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Quản lý và phân công các buổi phỏng vấn sắp tới.</p>
         </div>
-        <Link 
-          href="/hr/interviews/schedule"
-          className="px-4 py-2.5 bg-[#3525cd] text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[20px] mr-1.5">add</span>
-          Xếp lịch mới
-        </Link>
+        <div className="flex gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-on-surface font-label-bold text-label-bold hover:bg-surface-variant/30 transition-colors">
+            <span className="material-symbols-outlined text-[18px]">calendar_today</span>
+            Xem theo tuần
+          </button>
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+            <input 
+              className="pl-10 pr-4 py-2 border border-outline-variant rounded-lg font-body-sm text-body-sm w-64 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all bg-surface-container-lowest" 
+              placeholder="Tìm kiếm ứng viên..." 
+              type="text"
+            />
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Calendar Area */}
-        <div className="xl:col-span-3 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col">
-          <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <button className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"><span className="material-symbols-outlined text-[20px]">chevron_left</span></button>
-              <span className="font-bold text-slate-900">{currentWeek}</span>
-              <button className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"><span className="material-symbols-outlined text-[20px]">chevron_right</span></button>
+      {/* App Canvas */}
+      <div className="flex-1 flex flex-col md:flex-row p-container-padding gap-grid-gutter overflow-hidden bg-background h-[calc(100vh-140px)]">
+        {/* Calendar View (Left/Main) */}
+        <div className="flex-1 bg-surface rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-surface-variant/30 flex flex-col overflow-hidden">
+          {/* Calendar Header */}
+          <div className="p-4 border-b border-surface-variant/50 flex justify-between items-center bg-surface-container-lowest">
+            <div className="flex items-center gap-4">
+              <button className="p-2 hover:bg-surface-variant/30 rounded-full transition-colors"><span className="material-symbols-outlined">chevron_left</span></button>
+              <h3 className="font-headline-lg text-headline-lg text-on-surface">{currentWeek}</h3>
+              <button className="p-2 hover:bg-surface-variant/30 rounded-full transition-colors"><span className="material-symbols-outlined">chevron_right</span></button>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-slate-500">
-              <span className="flex items-center"><div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div> Sắp tới</span>
-              <span className="flex items-center ml-2"><div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div> Đã xong</span>
-              <span className="flex items-center ml-2"><div className="w-3 h-3 rounded-full bg-slate-400 mr-1"></div> Đã hủy</span>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-primary/10 text-primary rounded-full font-label-bold text-label-bold">Tất cả tuyển dụng</span>
             </div>
           </div>
           
-          <div className="flex-1 overflow-auto bg-slate-50 p-4">
-            <div className="min-w-[600px] bg-white rounded-lg border border-slate-200">
-              {/* Header row */}
-              <div className="grid grid-cols-6 border-b border-slate-200 text-center text-sm font-bold text-slate-700">
-                <div className="py-3 border-r border-slate-200 bg-slate-50">Giờ</div>
-                {days.map(day => <div key={day} className="py-3 border-r border-slate-200 last:border-0">{day}</div>)}
-              </div>
-              
-              {/* Time rows */}
-              {times.map(time => (
-                <div key={time} className="grid grid-cols-6 border-b border-slate-200 text-center text-sm last:border-0 min-h-[60px]">
-                  <div className="py-2 border-r border-slate-200 bg-slate-50 font-medium text-slate-500">{time}</div>
-                  {/* Mock cells */}
-                  {days.map((day, idx) => {
-                    // Randomly place an interview
-                    const isInterview = (day === 'Thứ 5' && time === '10:00') || (day === 'Thứ 6' && time === '14:00');
-                    return (
-                      <div key={idx} className="p-1 border-r border-slate-200 last:border-0 relative">
-                        {isInterview && (
-                          <div className="absolute inset-1 bg-blue-100 hover:bg-blue-200 border border-blue-200 rounded-md p-1 flex flex-col justify-center cursor-pointer transition-colors text-left overflow-hidden">
-                            <span className="font-bold text-blue-900 text-xs truncate">Nguyễn Văn A</span>
-                            <span className="text-[10px] text-blue-700 truncate">Senior Frontend</span>
-                          </div>
-                        )}
+          {/* Calendar Grid */}
+          <div className="flex-1 overflow-y-auto p-4 kanban-scroll custom-scrollbar">
+            <div className="grid grid-cols-5 gap-4 min-w-[800px]">
+              {/* Days Header */}
+              {DAYS.map(day => (
+                <div key={day.id} className={`text-center pb-2 border-b border-surface-variant font-label-bold text-label-bold ${day.isToday ? 'text-primary' : 'text-on-surface-variant'}`}>
+                  {day.name} {day.isToday && '(Hôm nay)'}
+                </div>
+              ))}
+
+              {/* Columns */}
+              {DAYS.map(day => (
+                <div key={`col-${day.id}`} className={`flex flex-col gap-3 min-h-[500px] ${day.isToday ? 'bg-primary/5 rounded-lg p-2 -mx-2' : ''}`}>
+                  {mockScheduled.filter(s => s.day === day.id).map(interview => (
+                    <div key={interview.id} className={`${interview.bgClass} p-3 rounded-lg border-l-4 ${interview.colorClass} hover:shadow-md transition-shadow cursor-pointer border-t border-r border-b border-outline-variant/10`}>
+                      <p className="font-label-bold text-label-bold text-on-surface">{interview.time}</p>
+                      <p className="font-body-md text-body-md font-semibold text-on-surface mt-1">{interview.candidateName}</p>
+                      <p className="font-body-sm text-body-sm text-on-surface-variant">{interview.position}</p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className={`w-6 h-6 rounded-full text-white flex items-center justify-center font-label-bold text-[10px] ${interview.colorClass === 'border-primary' ? 'bg-primary' : interview.colorClass === 'border-slate-800' ? 'bg-slate-800' : 'bg-slate-500'}`}>
+                          {interview.interviewerInitials}
+                        </div>
+                        <span className="font-body-sm text-body-sm text-on-surface-variant">{interview.interviewerName}</span>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
+
+                  {day.isToday && (
+                    <div className="border-2 border-dashed border-primary/30 rounded-lg p-4 flex items-center justify-center text-primary/50 font-label-bold text-label-bold bg-primary/5">
+                      + Thả ứng viên vào đây
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Sidebar: Upcoming */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-          <h2 className="font-bold text-slate-900 mb-4 flex items-center">
-            <span className="material-symbols-outlined mr-2 text-[#3525cd]">upcoming</span>
-            Sắp diễn ra
-          </h2>
-          
-          <div className="space-y-4">
-            {mockInterviews.filter(i => i.status === 'SCHEDULED').map(interview => (
-              <div key={interview.id} className="p-3 border border-slate-100 rounded-xl hover:border-slate-200 transition-colors shadow-sm">
-                <div className="flex justify-between items-start mb-1">
-                  <h3 className="font-bold text-slate-900 text-sm">{interview.candidateName}</h3>
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${interview.type === 'ONLINE' ? 'bg-indigo-50 text-indigo-700' : 'bg-teal-50 text-teal-700'}`}>
-                    {interview.type}
-                  </span>
+        {/* Pending Scheduling Sidebar (Right) */}
+        <div className="w-full md:w-80 bg-surface rounded-xl shadow-[0_4px_15px_rgba(0,0,0,0.05)] border border-surface-variant/30 flex flex-col overflow-hidden shrink-0">
+          <div className="p-4 border-b border-surface-variant/50 bg-surface-container-low">
+            <h3 className="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2">
+              <span className="material-symbols-outlined text-slate-800">hourglass_empty</span>
+              Đang chờ xếp lịch
+            </h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">Kéo ứng viên vào lịch</p>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 kanban-scroll custom-scrollbar">
+            {mockPending.map(pending => (
+              <div key={pending.id} className="bg-surface-container-lowest border border-outline-variant/40 p-3 rounded-lg cursor-grab hover:border-primary/50 hover:shadow-md transition-all group">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-body-md text-body-md font-semibold text-on-surface">{pending.name}</p>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">{pending.role}</p>
+                  </div>
+                  <span className="material-symbols-outlined text-outline-variant group-hover:text-primary transition-colors">drag_indicator</span>
                 </div>
-                <div className="text-xs text-slate-600 mb-2">{interview.position}</div>
-                <div className="flex items-center text-xs text-slate-500 space-x-2 bg-slate-50 p-1.5 rounded">
-                  <span className="material-symbols-outlined text-[14px]">calendar_today</span>
-                  <span>{interview.date}</span>
-                  <span className="material-symbols-outlined text-[14px] ml-2">schedule</span>
-                  <span>{interview.time}</span>
+                <div className="mt-3 flex gap-2">
+                  <span className={`px-2 py-1 rounded text-[10px] font-label-bold uppercase tracking-wider ${pending.tag1Color || 'bg-surface-variant text-on-surface-variant'}`}>
+                    {pending.tag1}
+                  </span>
+                  <span className="px-2 py-1 bg-surface-variant text-on-surface-variant rounded text-[10px] font-label-bold uppercase tracking-wider">
+                    {pending.tag2}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+          height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: #cbd5e1;
+          border-radius: 20px;
+        }
+      `}</style>
     </div>
   );
 }

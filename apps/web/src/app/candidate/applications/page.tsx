@@ -8,205 +8,208 @@ const mockApplications = [
   {
     id: 'app-1',
     jobId: 'job-1',
-    jobTitle: 'Senior Frontend Developer (React/Next.js)',
-    companyName: 'NexusTech',
-    companyLogo: 'N',
-    appliedAt: '2026-05-01',
-    status: 'INTERVIEWING',
-    matchScore: 92,
+    jobTitle: 'Kỹ sư Frontend Cao cấp',
+    companyName: 'Tập đoàn TechCorp',
+    location: 'Hà Nội, VN (Linh hoạt)',
+    companyLogo: 'https://ui-avatars.com/api/?name=TechCorp&background=6063ee&color=fff',
+    appliedAt: '24 Thg 10, 2025',
+    status: 'Đang phỏng vấn',
+    statusColor: 'bg-blue-100 text-blue-700',
+    steps: [
+      { id: 'applied', label: 'Đã ứng tuyển', state: 'completed' },
+      { id: 'screen', label: 'Sơ vấn', state: 'completed' },
+      { id: 'interview', label: 'Phỏng vấn', state: 'completed' },
+      { id: 'offer', label: 'Nhận việc', state: 'current' },
+    ],
+    progress: 75
   },
   {
     id: 'app-2',
     jobId: 'job-2',
-    jobTitle: 'Backend Engineer (Node.js)',
-    companyName: 'Global Solutions',
-    companyLogo: 'G',
-    appliedAt: '2026-04-28',
-    status: 'SUBMITTED',
-    matchScore: null,
+    jobTitle: 'Nhà thiết kế UX',
+    companyName: 'Hệ thống Innova',
+    location: 'Đà Nẵng, VN',
+    companyLogo: 'https://ui-avatars.com/api/?name=InnovaSystems&background=10b981&color=fff',
+    appliedAt: '02 Thg 11, 2025',
+    status: 'Đang sơ vấn',
+    statusColor: 'bg-green-100 text-green-700',
+    steps: [
+      { id: 'applied', label: 'Đã ứng tuyển', state: 'completed' },
+      { id: 'screen', label: 'Sơ vấn', state: 'current' },
+      { id: 'interview', label: 'Phỏng vấn', state: 'pending' },
+      { id: 'offer', label: 'Nhận việc', state: 'pending' },
+    ],
+    progress: 25
   },
   {
     id: 'app-3',
     jobId: 'job-3',
-    jobTitle: 'UI/UX Product Designer',
-    companyName: 'Creative Studio',
-    companyLogo: 'C',
-    appliedAt: '2026-04-15',
-    status: 'OFFERED',
-    matchScore: 88,
-  },
-  {
-    id: 'app-4',
-    jobId: 'job-4',
-    jobTitle: 'DevOps Engineer',
-    companyName: 'CloudCorp',
-    companyLogo: 'C',
-    appliedAt: '2026-04-10',
-    status: 'REJECTED',
-    matchScore: 65,
-  },
-  {
-    id: 'app-5',
-    jobId: 'job-5',
-    jobTitle: 'Fullstack Developer',
-    companyName: 'TechStart',
-    companyLogo: 'T',
-    appliedAt: '2026-05-05',
-    status: 'MATCHED',
-    matchScore: 85,
-  },
+    jobTitle: 'Lập trình viên Backend',
+    companyName: 'Giải pháp Toàn cầu',
+    location: 'TP.HCM, VN',
+    companyLogo: 'https://ui-avatars.com/api/?name=GlobalSolutions&background=f59e0b&color=fff',
+    appliedAt: '15 Thg 11, 2025',
+    status: 'Đã ứng tuyển',
+    statusColor: 'bg-gray-100 text-gray-700',
+    steps: [
+      { id: 'applied', label: 'Đã ứng tuyển', state: 'current' },
+      { id: 'screen', label: 'Sơ vấn', state: 'pending' },
+      { id: 'interview', label: 'Phỏng vấn', state: 'pending' },
+      { id: 'offer', label: 'Nhận việc', state: 'pending' },
+    ],
+    progress: 0
+  }
 ];
 
 const FILTER_TABS = [
-  { id: 'ALL', label: 'Tất cả' },
-  { id: 'SUBMITTED', label: 'Chờ duyệt' },
-  { id: 'MATCHED', label: 'Đã khớp' },
-  { id: 'INTERVIEWING', label: 'Phỏng vấn' },
-  { id: 'OFFERED', label: 'Nhận offer' },
-  { id: 'REJECTED', label: 'Bị từ chối' },
+  { id: 'ALL', label: 'Tất cả', count: 12 },
+  { id: 'ACTIVE', label: 'Đang xử lý', count: 4 },
+  { id: 'INTERVIEWING', label: 'Phỏng vấn', count: 2 },
+  { id: 'OFFERED', label: 'Lời mời', count: 1 },
 ];
-
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'SUBMITTED':
-      return <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">Chờ duyệt</span>;
-    case 'MATCHED':
-      return <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">Đã khớp</span>;
-    case 'INTERVIEWING':
-      return <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">Phỏng vấn</span>;
-    case 'OFFERED':
-      return <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Nhận offer</span>;
-    case 'REJECTED':
-      return <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Bị từ chối</span>;
-    default:
-      return <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">{status}</span>;
-  }
-};
 
 export default function CandidateApplications() {
   const [activeFilter, setActiveFilter] = useState('ALL');
-  const [applications, setApplications] = useState(mockApplications);
-
-  const filteredApps = activeFilter === 'ALL' 
-    ? applications 
-    : applications.filter(app => app.status === activeFilter);
-
-  const handleCancel = (id: string) => {
-    if (confirm('Bạn có chắc chắn muốn hủy đơn ứng tuyển này? Hành động này không thể hoàn tác.')) {
-      setApplications(applications.filter(app => app.id !== id));
-      alert('Đã hủy đơn ứng tuyển.');
-    }
-  };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Đơn ứng tuyển</h1>
-        <p className="text-slate-500 mt-1">Theo dõi trạng thái các công việc bạn đã ứng tuyển.</p>
-      </div>
-
-      {/* Filter Tabs */}
-      <div className="flex overflow-x-auto pb-2 -mb-2 hide-scrollbar space-x-2">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveFilter(tab.id)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              activeFilter === tab.id 
-                ? 'bg-[#3525cd] text-white shadow-sm' 
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-[#3525cd] hover:text-[#3525cd]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="p-container-padding max-w-7xl mx-auto w-full space-y-stack-gap-lg">
+      
+      {/* Header & Filters */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div>
+          <h2 className="font-headline-xl text-headline-xl font-bold text-on-surface">Đơn ứng tuyển</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Theo dõi lộ trình sự nghiệp và các cơ hội bạn đang theo đuổi.</p>
+        </div>
+        
+        <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-2 lg:pb-0 hide-scrollbar bg-surface-container-low p-1.5 rounded-2xl border border-outline-variant/30">
+          {FILTER_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveFilter(tab.id)}
+              className={`px-5 py-2 rounded-xl font-label-bold text-label-bold flex-shrink-0 transition-all duration-300 ${
+                activeFilter === tab.id
+                  ? 'bg-primary text-on-primary shadow-md transform scale-105'
+                  : 'text-on-surface-variant hover:bg-surface-variant'
+              }`}
+            >
+              {tab.label} <span className={`ml-1 opacity-60 ${activeFilter === tab.id ? 'text-on-primary' : ''}`}>({tab.count})</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Applications List */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        {filteredApps.length === 0 ? (
-          <div className="p-12 text-center">
-            <span className="material-symbols-outlined text-5xl text-slate-300 mb-3">inbox</span>
-            <h3 className="text-lg font-bold text-slate-900">Không tìm thấy đơn ứng tuyển</h3>
-            <p className="text-slate-500 mt-1">Không có đơn ứng tuyển nào khớp với bộ lọc hiện tại.</p>
-            <button 
-              onClick={() => setActiveFilter('ALL')}
-              className="mt-4 px-4 py-2 text-[#3525cd] font-medium hover:bg-indigo-50 rounded-lg transition-colors"
-            >
-              Xem tất cả
-            </button>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-100">
-                  <th className="px-6 py-4 font-medium">Công việc & Công ty</th>
-                  <th className="px-6 py-4 font-medium">Ngày nộp</th>
-                  <th className="px-6 py-4 font-medium">Độ phù hợp</th>
-                  <th className="px-6 py-4 font-medium">Trạng thái</th>
-                  <th className="px-6 py-4 font-medium text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredApps.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-center font-bold text-indigo-700 flex-shrink-0">
-                          {app.companyLogo}
-                        </div>
-                        <div>
-                          <Link href={`/jobs/${app.jobId}`} className="font-bold text-slate-900 hover:text-[#3525cd] transition-colors line-clamp-1">
-                            {app.jobTitle}
-                          </Link>
-                          <div className="text-sm text-slate-500 mt-0.5">{app.companyName}</div>
-                        </div>
+      <div className="grid grid-cols-1 gap-6">
+        {mockApplications.map((app) => (
+          <div 
+            key={app.id} 
+            className="group bg-surface-container-lowest backdrop-blur-md rounded-2xl p-6 transition-all duration-300 hover:shadow-ambient-card border border-surface-variant/50 hover:border-primary/30 relative overflow-hidden"
+          >
+            {/* Status Decoration */}
+            <div className={`absolute left-0 top-0 w-1.5 h-full ${
+              app.status === 'Đang phỏng vấn' ? 'bg-blue-500' : 
+              app.status === 'Đang sơ vấn' ? 'bg-green-500' : 'bg-primary'
+            }`}></div>
+
+            <div className="flex flex-col xl:flex-row justify-between gap-8">
+              
+              {/* Job Info */}
+              <div className="flex items-start gap-5 flex-1">
+                <div className="w-16 h-16 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0 overflow-hidden border border-surface-variant/50 shadow-sm transition-transform group-hover:scale-105">
+                  <img src={app.companyLogo} alt={app.companyName} className="w-full h-full object-cover" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">{app.jobTitle}</h3>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${app.statusColor}`}>
+                      {app.status}
+                    </span>
+                  </div>
+                  <p className="font-body-md text-body-md text-on-surface-variant font-medium">{app.companyName} • {app.location}</p>
+                  <div className="flex items-center gap-4 mt-3">
+                    <div className="flex items-center gap-1.5 text-outline font-body-sm text-body-sm">
+                      <span className="material-symbols-outlined text-[16px]">calendar_today</span>
+                      Ngày ứng tuyển: {app.appliedAt}
+                    </div>
+                    <button className="text-primary font-label-bold text-label-bold hover:underline flex items-center gap-1">
+                      Xem việc làm <span className="material-symbols-outlined text-[14px]">arrow_outward</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Stepper */}
+              <div className="w-full xl:w-1/2 flex flex-col justify-center">
+                <div className="mb-6 flex justify-between items-end">
+                  <span className="text-on-surface font-label-bold text-label-bold">Tiến độ ứng tuyển</span>
+                  <span className="text-primary font-label-bold text-label-bold">{app.progress}%</span>
+                </div>
+                
+                <div className="flex justify-between relative px-2">
+                  {/* Track Background */}
+                  <div className="absolute left-0 top-[12px] w-full h-1 bg-surface-container-high -translate-y-1/2 rounded-full"></div>
+                  {/* Track Active */}
+                  <div 
+                    className="absolute left-0 top-[12px] h-1 bg-primary -translate-y-1/2 rounded-full transition-all duration-1000 shadow-[0_0_8px_rgba(70,72,212,0.4)]"
+                    style={{ width: `${app.progress}%` }}
+                  ></div>
+                  
+                  {app.steps.map((step) => (
+                    <div key={step.id} className="flex flex-col items-center gap-3 relative z-10">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-all duration-500 ${
+                        step.state === 'completed' 
+                          ? 'bg-primary text-on-primary scale-110' 
+                          : step.state === 'current'
+                            ? 'bg-surface border-2 border-primary text-primary animate-pulse'
+                            : 'bg-surface-container-high text-outline-variant'
+                      }`}>
+                        {step.state === 'completed' ? (
+                          <span className="material-symbols-outlined text-[14px] font-bold">check</span>
+                        ) : (
+                          <div className={`w-2 h-2 rounded-full ${step.state === 'current' ? 'bg-primary' : 'bg-outline-variant'}`}></div>
+                        )}
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
-                      {app.appliedAt}
-                    </td>
-                    <td className="px-6 py-4">
-                      {app.matchScore ? (
-                        <div className="flex items-center space-x-2">
-                          <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full rounded-full ${
-                                app.matchScore >= 80 ? 'bg-green-500' : app.matchScore >= 60 ? 'bg-amber-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${app.matchScore}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm font-medium text-slate-700">{app.matchScore}%</span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-400 italic">Đang tính...</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(app.status)}
-                    </td>
-                    <td className="px-6 py-4 text-right space-x-2">
-                      <button className="text-sm font-medium text-[#3525cd] hover:bg-indigo-50 px-3 py-1.5 rounded transition-colors">
-                        Chi tiết
-                      </button>
-                      {app.status === 'SUBMITTED' && (
-                        <button 
-                          onClick={() => handleCancel(app.id)}
-                          className="text-sm font-medium text-red-600 hover:bg-red-50 px-3 py-1.5 rounded transition-colors"
-                        >
-                          Hủy đơn
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      
+                      <span className={`font-label-bold text-[11px] uppercase tracking-wide transition-colors ${
+                        step.state === 'completed' || step.state === 'current' ? 'text-on-surface' : 'text-outline-variant'
+                      }`}>
+                        {step.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action */}
+              <div className="flex items-center">
+                <button className="w-full xl:w-auto px-6 py-2.5 bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold rounded-xl hover:bg-primary hover:text-on-primary transition-all duration-300 flex items-center justify-center gap-2">
+                  Chi tiết
+                  <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </div>
+
+            </div>
           </div>
-        )}
+        ))}
       </div>
+      
+      {/* Empty State Mock */}
+      {mockApplications.length === 0 && (
+        <div className="py-20 flex flex-col items-center justify-center bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant/50">
+          <div className="w-24 h-24 bg-surface-container rounded-full flex items-center justify-center mb-6">
+            <span className="material-symbols-outlined text-[48px] text-outline opacity-40">work_history</span>
+          </div>
+          <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">Bạn chưa ứng tuyển vị trí nào</h3>
+          <p className="font-body-md text-body-md text-on-surface-variant mt-2 text-center max-w-sm">
+            Khám phá hàng ngàn cơ hội việc làm phù hợp với năng lực của bạn ngay hôm nay.
+          </p>
+          <Link href="/jobs" className="mt-8 px-8 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:shadow-lg transition-all active:scale-95">
+            Tìm việc ngay
+          </Link>
+        </div>
+      )}
+
     </div>
   );
 }
+

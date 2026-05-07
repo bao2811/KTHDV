@@ -2,86 +2,145 @@
 
 // --- MOCK DATA ---
 const mockInterviews = [
-  { id: 'int-1', jobTitle: 'Senior Frontend Developer', company: 'TechNova', time: '10:00 - 11:00', type: 'ONLINE', status: 'UPCOMING', date: '08/05/2026', link: 'https://meet.google.com/abc-defg-hij', note: 'Chuẩn bị mạng ổn định' },
-  { id: 'int-2', jobTitle: 'UI/UX Designer', company: 'Creative Studio', time: '14:00 - 15:00', type: 'IN_PERSON', status: 'COMPLETED', date: '01/05/2026', location: 'Tầng 3, Tòa A, 123 Đường X', note: '' },
-  { id: 'int-3', jobTitle: 'React Developer', company: 'StartupZ', time: '09:00 - 10:00', type: 'ONLINE', status: 'CANCELED', date: '28/04/2026', link: '', note: '' },
+  { 
+    id: 'int-1', 
+    jobTitle: 'Lập trình viên Frontend Cao cấp', 
+    company: 'TechNova', 
+    time: '10:00 - 11:00', 
+    type: 'ONLINE', 
+    status: 'UPCOMING', 
+    date: '08/05/2026', 
+    link: 'https://meet.google.com/abc-defg-hij', 
+    note: 'Chuẩn bị mạng ổn định và demo project cá nhân nếu được yêu cầu.' 
+  },
+  { 
+    id: 'int-2', 
+    jobTitle: 'Nhà thiết kế UI/UX', 
+    company: 'Creative Studio', 
+    time: '14:00 - 15:00', 
+    type: 'IN_PERSON', 
+    status: 'COMPLETED', 
+    date: '01/05/2026', 
+    location: 'Tầng 3, Tòa A, 123 Đường X', 
+    note: '' 
+  },
+  { 
+    id: 'int-3', 
+    jobTitle: 'Lập trình viên React', 
+    company: 'StartupZ', 
+    time: '09:00 - 10:00', 
+    type: 'ONLINE', 
+    status: 'CANCELED', 
+    date: '28/04/2026', 
+    link: '', 
+    note: '' 
+  },
 ];
 
 export default function CandidateInterviews() {
   return (
-    <div className="space-y-6">
+    <div className="p-container-padding max-w-7xl mx-auto w-full space-y-stack-gap-lg">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Lịch Phỏng Vấn Của Bạn</h1>
-        <p className="text-slate-500 mt-1">Theo dõi các lịch phỏng vấn sắp tới và đã tham gia.</p>
+        <h2 className="font-headline-xl text-headline-xl font-bold text-on-surface">Lịch phỏng vấn</h2>
+        <p className="font-body-md text-body-md text-on-surface-variant mt-1">Theo dõi các buổi phỏng vấn sắp tới và xem lại lịch sử phỏng vấn của bạn.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="font-bold text-lg text-slate-900 border-b border-slate-200 pb-2">Danh sách phỏng vấn</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-grid-gutter">
+        <div className="lg:col-span-8 space-y-stack-gap-md">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">Danh sách phỏng vấn</h3>
+            <span className="text-on-surface-variant font-label-bold text-label-bold px-3 py-1 bg-surface-container rounded-full">
+              {mockInterviews.length} Lịch hẹn
+            </span>
+          </div>
           
           {mockInterviews.map((interview) => (
-            <div key={interview.id} className="bg-white rounded-xl shadow-sm border border-slate-100 p-5 hover:border-[#3525cd]/30 transition-colors">
-              <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg font-bold text-slate-900">{interview.jobTitle}</h3>
-                    {interview.status === 'UPCOMING' && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Sắp tới</span>}
-                    {interview.status === 'COMPLETED' && <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Đã xong</span>}
-                    {interview.status === 'CANCELED' && <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-2 py-0.5 rounded-full">Đã hủy</span>}
+            <div 
+              key={interview.id} 
+              className="bg-surface-container-lowest rounded-2xl shadow-ambient-card border border-surface-variant/50 p-6 hover:border-primary/30 transition-all group"
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
+                <div className="flex-1 space-y-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface group-hover:text-primary transition-colors">{interview.jobTitle}</h3>
+                    {interview.status === 'UPCOMING' && (
+                      <span className="bg-primary/10 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-primary/20">Sắp tới</span>
+                    )}
+                    {interview.status === 'COMPLETED' && (
+                      <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-green-200">Hoàn thành</span>
+                    )}
+                    {interview.status === 'CANCELED' && (
+                      <span className="bg-error/10 text-error text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-error/20">Đã hủy</span>
+                    )}
                   </div>
-                  <p className="text-sm text-slate-500 mb-4">{interview.company}</p>
                   
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-slate-600">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px] text-slate-400">calendar_today</span>
-                      <span>{interview.date}</span>
+                  <div className="flex items-center gap-2 text-on-surface-variant font-medium">
+                    <span className="material-symbols-outlined text-[20px] font-variation-fill">business</span>
+                    <p className="font-body-md text-body-md">{interview.company}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
+                    <div className="flex items-center gap-3 text-on-surface-variant">
+                      <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[18px] text-primary">calendar_today</span>
+                      </div>
+                      <span className="font-body-sm text-body-sm">{interview.date}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px] text-slate-400">schedule</span>
-                      <span>{interview.time}</span>
+                    <div className="flex items-center gap-3 text-on-surface-variant">
+                      <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[18px] text-primary">schedule</span>
+                      </div>
+                      <span className="font-body-sm text-body-sm">{interview.time}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[18px] text-slate-400">
-                        {interview.type === 'ONLINE' ? 'videocam' : 'location_on'}
-                      </span>
-                      <span>{interview.type === 'ONLINE' ? 'Trực tuyến' : 'Trực tiếp'}</span>
+                    <div className="flex items-center gap-3 text-on-surface-variant">
+                      <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                        <span className="material-symbols-outlined text-[18px] text-primary">
+                          {interview.type === 'ONLINE' ? 'videocam' : 'location_on'}
+                        </span>
+                      </div>
+                      <span className="font-body-sm text-body-sm">{interview.type === 'ONLINE' ? 'Phỏng vấn Trực tuyến' : 'Phỏng vấn Trực tiếp'}</span>
                     </div>
                     {interview.type === 'ONLINE' && interview.link ? (
-                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[18px] text-slate-400">link</span>
-                        <a href={interview.link} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline truncate">{interview.link}</a>
+                       <div className="flex items-center gap-3 text-on-surface-variant overflow-hidden">
+                        <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-primary">link</span>
+                        </div>
+                        <a href={interview.link} target="_blank" rel="noreferrer" className="text-primary hover:underline truncate font-body-sm text-body-sm font-medium">{interview.link}</a>
                       </div>
                     ) : (
                       interview.location && (
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[18px] text-slate-400">map</span>
-                          <span className="truncate">{interview.location}</span>
+                        <div className="flex items-center gap-3 text-on-surface-variant overflow-hidden">
+                          <div className="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-[18px] text-primary">map</span>
+                          </div>
+                          <span className="truncate font-body-sm text-body-sm">{interview.location}</span>
                         </div>
                       )
                     )}
                   </div>
 
                   {interview.note && (
-                    <div className="mt-4 p-3 bg-amber-50 rounded-lg text-sm text-amber-800 flex items-start">
-                      <span className="material-symbols-outlined text-[18px] mr-2 mt-0.5">info</span>
-                      <p>{interview.note}</p>
+                    <div className="p-4 bg-tertiary-fixed text-on-tertiary-fixed rounded-xl flex items-start gap-3 border border-tertiary-container/20">
+                      <span className="material-symbols-outlined text-[20px] shrink-0 mt-0.5">sticky_note_2</span>
+                      <p className="font-body-sm text-body-sm leading-relaxed"><span className="font-bold">Lưu ý:</span> {interview.note}</p>
                     </div>
                   )}
                 </div>
 
                 {interview.status === 'UPCOMING' && (
-                  <div className="w-full sm:w-auto flex sm:flex-col gap-2">
+                  <div className="w-full sm:w-auto flex flex-col gap-3 shrink-0 pt-2">
                     {interview.type === 'ONLINE' && interview.link && (
                       <a 
                         href={interview.link} 
                         target="_blank" 
                         rel="noreferrer"
-                        className="flex-1 sm:flex-none px-4 py-2 bg-[#3525cd] text-white text-sm font-bold rounded-lg hover:bg-indigo-700 transition-colors text-center"
+                        className="px-6 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:shadow-md transition-all text-center flex items-center justify-center gap-2"
                       >
+                        <span className="material-symbols-outlined text-[18px]">videocam</span>
                         Vào phòng họp
                       </a>
                     )}
-                    <button className="flex-1 sm:flex-none px-4 py-2 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-lg hover:bg-slate-50 transition-colors text-center">
+                    <button className="px-6 py-3 bg-surface-container-high text-on-surface-variant font-label-bold text-label-bold rounded-xl hover:bg-surface-variant transition-all text-center">
                       Yêu cầu đổi lịch
                     </button>
                   </div>
@@ -91,29 +150,54 @@ export default function CandidateInterviews() {
           ))}
 
           {mockInterviews.length === 0 && (
-            <div className="text-center py-12 bg-white rounded-xl border border-slate-100">
-              <span className="material-symbols-outlined text-[48px] text-slate-300 mb-3">event_busy</span>
-              <h3 className="text-lg font-bold text-slate-900">Không có lịch phỏng vấn nào</h3>
-              <p className="text-slate-500 mt-1">Bạn chưa có lịch hẹn phỏng vấn nào trong thời gian này.</p>
+            <div className="text-center py-20 bg-surface-container-lowest rounded-3xl border border-dashed border-outline-variant/50">
+              <div className="w-20 h-20 bg-surface-container rounded-full flex items-center justify-center mb-4 mx-auto opacity-40">
+                <span className="material-symbols-outlined text-[48px] text-outline">event_busy</span>
+              </div>
+              <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface">Không có lịch phỏng vấn</h3>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-2">Bạn hiện chưa có lịch hẹn phỏng vấn nào sắp tới.</p>
             </div>
           )}
         </div>
 
-        <div className="space-y-6">
-          <div className="bg-gradient-to-br from-[#3525cd] to-[#5b4eff] rounded-xl p-6 text-white shadow-md">
-            <h3 className="font-bold text-lg mb-2 flex items-center">
-              <span className="material-symbols-outlined mr-2">lightbulb</span>
-              Mẹo Phỏng Vấn
+        <div className="lg:col-span-4 space-y-stack-gap-lg">
+          {/* Calendar Widget Placeholder */}
+          <div className="bg-primary-container text-on-primary-container rounded-2xl p-6 shadow-ambient-card overflow-hidden relative">
+            <h3 className="font-headline-lg text-headline-lg font-bold mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined">tips_and_updates</span>
+              Mẹo phỏng vấn
             </h3>
-            <ul className="space-y-3 text-sm text-indigo-100 mt-4 list-disc list-inside">
-              <li>Vào phòng họp trước 5-10 phút để kiểm tra micro/camera.</li>
-              <li>Chọn không gian yên tĩnh, đủ ánh sáng.</li>
-              <li>Chuẩn bị sẵn các câu hỏi để hỏi nhà tuyển dụng.</li>
-              <li>Ăn mặc lịch sự, phù hợp với văn hóa công ty.</li>
+            <ul className="space-y-4 relative z-10">
+              {[
+                'Kiểm tra micro và camera trước 10 phút.',
+                'Chuẩn bị trang phục chuyên nghiệp.',
+                'Nghiên cứu kỹ về công ty và vị trí ứng tuyển.',
+                'Chuẩn bị ít nhất 3 câu hỏi cho nhà tuyển dụng.'
+              ].map((tip, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm font-medium leading-relaxed opacity-90 hover:opacity-100 transition-opacity">
+                  <span className="w-5 h-5 rounded-full bg-on-primary-container/20 flex items-center justify-center shrink-0 mt-0.5 text-[10px] font-bold">
+                    {i + 1}
+                  </span>
+                  {tip}
+                </li>
+              ))}
             </ul>
+            {/* Decoration */}
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+          </div>
+
+          <div className="bg-surface-container-high rounded-2xl p-6 border border-outline-variant/30">
+            <h4 className="font-label-bold text-label-bold text-on-surface uppercase tracking-widest mb-4">Trợ giúp</h4>
+            <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+              Nếu bạn gặp khó khăn trong việc tham gia buổi phỏng vấn hoặc cần hỗ trợ kỹ thuật, vui lòng liên hệ với chúng tôi qua hotline hoặc email hỗ trợ.
+            </p>
+            <button className="mt-4 w-full py-2 bg-on-surface text-surface font-label-bold text-label-bold rounded-lg hover:opacity-90 transition-opacity">
+              Liên hệ hỗ trợ
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
 }
+

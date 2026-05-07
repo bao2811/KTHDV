@@ -8,46 +8,46 @@ const MOCK_JOBS = [
   {
     id: 'job-1',
     title: 'Senior Frontend Developer (React/Next.js)',
-    company: { name: 'NexusTech', logo: 'N' },
-    location: 'Hồ Chí Minh',
+    company: { name: 'NexusTech', location: 'Hồ Chí Minh (Hybrid)', logo: 'code' },
     jobType: 'FULL_TIME',
     salaryMin: 20000000,
     salaryMax: 45000000,
     skills: ['React', 'Next.js', 'TypeScript', 'TailwindCSS'],
     postedAt: '2 giờ trước',
+    matchScore: 94,
   },
   {
     id: 'job-2',
     title: 'Backend Engineer (Node.js/NestJS)',
-    company: { name: 'Global Solutions', logo: 'G' },
-    location: 'Hà Nội',
+    company: { name: 'Global Solutions', location: 'Hà Nội (Remote)', logo: 'database' },
     jobType: 'REMOTE',
     salaryMin: 25000000,
     salaryMax: 50000000,
     skills: ['Node.js', 'NestJS', 'PostgreSQL', 'Docker'],
     postedAt: '5 giờ trước',
+    matchScore: 88,
   },
   {
     id: 'job-3',
     title: 'UI/UX Product Designer',
-    company: { name: 'Creative Minds', logo: 'C' },
-    location: 'Hồ Chí Minh',
+    company: { name: 'Creative Minds', location: 'Hồ Chí Minh', logo: 'design_services' },
     jobType: 'FULL_TIME',
     salaryMin: 15000000,
     salaryMax: 30000000,
     skills: ['Figma', 'Prototyping', 'User Research'],
     postedAt: '1 ngày trước',
+    matchScore: 72,
   },
   {
     id: 'job-4',
     title: 'DevOps Engineer (AWS/Kubernetes)',
-    company: { name: 'Cloudify', logo: 'C' },
-    location: 'Đà Nẵng',
+    company: { name: 'Cloudify', location: 'Đà Nẵng', logo: 'cloud' },
     jobType: 'FULL_TIME',
     salaryMin: 30000000,
     salaryMax: 60000000,
     skills: ['AWS', 'Kubernetes', 'CI/CD', 'Terraform'],
     postedAt: '2 ngày trước',
+    matchScore: 85,
   }
 ];
 
@@ -66,190 +66,190 @@ export default function JobsPage() {
   if (!isClient) return null;
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff]">
-      {/* Navbar (Public) */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <Link href="/" className="text-2xl font-bold text-[#3525cd] flex items-center gap-2">
-            <span className="material-symbols-outlined text-3xl font-light">token</span>
-            Nexus<span className="text-gray-900 font-medium">Talent</span>
-          </Link>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-gray-600 hover:text-[#3525cd] font-medium px-4 py-2">
+    <div className="bg-background text-on-background min-h-screen flex flex-col font-body-md">
+      {/* TopNavBar (Shared Component) */}
+      <nav className="bg-surface-container-lowest shadow-sm sticky top-0 z-50">
+        <div className="flex justify-between items-center w-full px-container-padding py-4 max-w-7xl mx-auto">
+          <div className="flex items-center gap-stack-gap-lg">
+            <Link href="/" className="text-headline-lg font-headline-lg font-bold text-primary flex items-center gap-2">
+              <span className="material-symbols-outlined icon-fill">token</span>
+              NexusTalent
+            </Link>
+            <div className="hidden md:flex gap-stack-gap-md ml-8">
+              <Link href="/jobs" className="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 hover:text-primary transition-all active:scale-95 duration-200">
+                Tìm việc làm
+              </Link>
+              <Link href="/candidate/dashboard" className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-all active:scale-95 duration-200">
+                Trang cá nhân ứng viên
+              </Link>
+            </div>
+          </div>
+          <div className="flex items-center gap-stack-gap-md">
+            <Link href="/login" className="font-body-md text-body-md text-primary bg-transparent px-4 py-2 rounded-lg hover:bg-surface-variant transition-colors active:scale-95 duration-200">
               Đăng nhập
             </Link>
-            <Link href="/register" className="bg-[#3525cd] hover:bg-[#2b1da5] text-white px-6 py-2.5 rounded-full font-medium transition-colors shadow-md shadow-[#3525cd]/20">
+            <Link href="/register" className="font-body-md text-body-md text-on-primary bg-primary px-4 py-2 rounded-xl shadow-sm hover:bg-secondary transition-colors active:scale-95 duration-200">
               Đăng ký
             </Link>
           </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero Search Section */}
-      <div className="bg-gradient-to-br from-[#3525cd]/10 via-indigo-50 to-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6 tracking-tight">
-            Khám phá cơ hội nghề nghiệp lý tưởng
-          </h1>
-          <p className="text-lg text-gray-600 mb-10">
-            Hàng ngàn công việc IT chất lượng đang chờ đón bạn.
-          </p>
+      {/* Main Content Area */}
+      <main className="flex-grow flex flex-col lg:flex-row max-w-7xl mx-auto w-full px-container-padding py-stack-gap-lg gap-grid-gutter mt-8">
+        
+        {/* Filters Sidebar */}
+        <aside className="w-full lg:w-1/4 flex-shrink-0 bg-surface-container-lowest rounded-2xl shadow-ambient-card p-stack-gap-lg h-fit sticky top-24">
+          <h2 className="font-headline-lg text-headline-lg text-on-surface mb-stack-gap-lg">Bộ lọc</h2>
           
-          <div className="bg-white p-3 rounded-2xl shadow-xl shadow-indigo-100/50 flex flex-col md:flex-row gap-3 border border-gray-100">
-            <div className="flex-1 flex items-center px-4 bg-gray-50 rounded-xl border border-transparent focus-within:border-[#3525cd]/30 focus-within:bg-white transition-colors">
-              <span className="material-symbols-outlined text-gray-400">search</span>
+          <div className="flex flex-col gap-stack-gap-lg">
+            {/* Search Input */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
               <input 
-                type="text" 
-                placeholder="Tìm kiếm công việc, kỹ năng, công ty..." 
-                className="w-full bg-transparent border-none outline-none px-3 py-3.5 text-gray-700"
+                className="w-full pl-10 pr-4 py-3 bg-surface-container-low border border-outline-variant rounded-full text-body-md font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container focus:ring-opacity-50 transition-shadow" 
+                placeholder="Tìm từ khóa..." 
+                type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="bg-[#3525cd] hover:bg-[#2b1da5] text-white px-8 py-3.5 rounded-xl font-medium transition-colors shadow-lg shadow-[#3525cd]/20 flex items-center justify-center gap-2">
-              Tìm việc ngay
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {/* Main Content & Filters */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* Filters Sidebar */}
-          <div className="w-full lg:w-72 flex-shrink-0">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 sticky top-28">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-lg font-bold text-gray-900">Bộ lọc</h2>
-                <button className="text-sm text-[#3525cd] hover:underline font-medium">Xóa lọc</button>
+            {/* Category Filter */}
+            <div>
+              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-stack-gap-sm uppercase tracking-wider">Ngành nghề</h3>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input defaultChecked className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">IT - Phần mềm (42)</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Thiết kế - UX/UI (18)</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Marketing (24)</span>
+                </label>
               </div>
+            </div>
 
-              <div className="space-y-6">
-                {/* Ngành nghề */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Ngành nghề</label>
-                  <select className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-700 outline-none focus:border-[#3525cd] focus:ring-1 focus:ring-[#3525cd]">
-                    <option>Tất cả ngành nghề</option>
-                    <option>IT - Phần mềm</option>
-                    <option>Thiết kế - UX/UI</option>
-                    <option>Marketing</option>
-                  </select>
+            <hr className="border-outline-variant/30"/>
+
+            {/* Job Type Filter */}
+            <div>
+              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-stack-gap-sm uppercase tracking-wider">Loại hình</h3>
+              <div className="flex flex-col gap-2">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input defaultChecked className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Toàn thời gian</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Bán thời gian</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <input className="form-checkbox h-5 w-5 text-primary border-outline-variant rounded focus:ring-primary focus:ring-offset-surface-container-lowest" type="checkbox"/>
+                  <span className="font-body-sm text-body-sm text-on-surface group-hover:text-primary transition-colors">Làm từ xa (Remote)</span>
+                </label>
+              </div>
+            </div>
+
+            <hr className="border-outline-variant/30"/>
+
+            {/* Skills Filter */}
+            <div>
+              <h3 className="font-label-bold text-label-bold text-on-surface-variant mb-stack-gap-sm uppercase tracking-wider">Kỹ năng</h3>
+              <div className="flex flex-wrap gap-2">
+                <span className="px-3 py-1 bg-primary-container/20 text-primary font-body-sm text-body-sm rounded-full cursor-pointer hover:bg-primary-container/30 transition-colors">React</span>
+                <span className="px-3 py-1 bg-surface-container text-on-surface-variant font-body-sm text-body-sm rounded-full cursor-pointer hover:bg-surface-variant transition-colors">Python</span>
+                <span className="px-3 py-1 bg-primary-container/20 text-primary font-body-sm text-body-sm rounded-full cursor-pointer hover:bg-primary-container/30 transition-colors">AWS</span>
+                <span className="px-3 py-1 bg-surface-container text-on-surface-variant font-body-sm text-body-sm rounded-full cursor-pointer hover:bg-surface-variant transition-colors">Figma</span>
+                <span className="px-3 py-1 bg-surface-container text-on-surface-variant font-body-sm text-body-sm rounded-full cursor-pointer hover:bg-surface-variant transition-colors">Docker</span>
+              </div>
+            </div>
+
+          </div>
+        </aside>
+
+        {/* Job Listings Canvas */}
+        <section className="w-full lg:w-3/4 flex flex-col gap-stack-gap-lg">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4">
+            <div>
+              <h1 className="font-headline-xl text-headline-xl text-on-background mb-2">Khám phá cơ hội nghề nghiệp.</h1>
+              <p className="font-body-md text-body-md text-on-surface-variant">Hiển thị {MOCK_JOBS.length} công việc phù hợp với tiêu chí của bạn.</p>
+            </div>
+            <div className="mt-4 md:mt-0 flex items-center gap-2">
+              <span className="font-body-sm text-body-sm text-on-surface-variant">Sắp xếp theo:</span>
+              <select className="bg-surface-container-lowest border-none font-body-md text-body-md text-primary font-semibold focus:ring-0 cursor-pointer outline-none">
+                <option>Phù hợp nhất</option>
+                <option>Mới nhất</option>
+                <option>Lương (Cao đến Thấp)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Job Cards Grid */}
+          <div className="flex flex-col gap-stack-gap-md">
+            {MOCK_JOBS.map((job) => (
+              <div key={job.id} className="bg-surface-container-lowest rounded-2xl p-stack-gap-lg shadow-ambient-card flex flex-col md:flex-row gap-stack-gap-md md:items-center hover:-translate-y-1 transition-transform duration-300 border border-transparent hover:border-primary-fixed">
+                <div className="flex-shrink-0">
+                  <div className="w-16 h-16 bg-surface-container-low rounded-xl flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined icon-fill text-[32px]">{job.company.logo}</span>
+                  </div>
                 </div>
-
-                {/* Địa điểm */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Địa điểm</label>
-                  <select className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-gray-700 outline-none focus:border-[#3525cd] focus:ring-1 focus:ring-[#3525cd]">
-                    <option>Tất cả địa điểm</option>
-                    <option>Hồ Chí Minh</option>
-                    <option>Hà Nội</option>
-                    <option>Đà Nẵng</option>
-                  </select>
-                </div>
-
-                {/* Loại hình */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">Loại hình</label>
-                  <div className="space-y-2.5">
-                    {['Toàn thời gian', 'Bán thời gian', 'Làm từ xa (Remote)'].map(type => (
-                      <label key={type} className="flex items-center gap-3 cursor-pointer group">
-                        <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-[#3525cd] focus:ring-[#3525cd] cursor-pointer" />
-                        <span className="text-sm text-gray-600 group-hover:text-gray-900">{type}</span>
-                      </label>
+                
+                <div className="flex-grow">
+                  <div className="flex justify-between items-start mb-1">
+                    <h3 className="font-headline-lg text-headline-lg text-on-surface line-clamp-1">{job.title}</h3>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className={`px-3 py-1 rounded-full font-label-bold text-label-bold ${
+                        job.matchScore >= 85 ? 'bg-primary-container/20 text-primary' : 'bg-surface-variant text-on-surface-variant'
+                      }`}>
+                        {job.matchScore}% Phù hợp
+                      </span>
+                      <button className="text-outline-variant hover:text-primary transition-colors">
+                        <span className="material-symbols-outlined">bookmark_border</span>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <p className="font-body-sm text-body-sm text-on-surface-variant mb-3">
+                    {job.company.name} &bull; {job.company.location}
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    <span className="px-2 py-1 bg-surface-variant text-on-surface-variant rounded font-body-sm text-body-sm">{job.jobType === 'FULL_TIME' ? 'Toàn thời gian' : job.jobType === 'REMOTE' ? 'Làm từ xa' : 'Hợp đồng'}</span>
+                    <span className="px-2 py-1 bg-surface-variant text-on-surface-variant rounded font-body-sm text-body-sm">{formatCurrency(job.salaryMin)} - {formatCurrency(job.salaryMax)}</span>
+                    {job.skills.slice(0, 3).map(skill => (
+                       <span key={skill} className="px-2 py-1 bg-surface-variant text-on-surface-variant rounded font-body-sm text-body-sm">{skill}</span>
                     ))}
                   </div>
                 </div>
+
+                <div className="flex-shrink-0 mt-4 md:mt-0 flex md:flex-col gap-3 w-full md:w-auto">
+                  <button className="flex-1 md:flex-none font-body-md text-body-md text-on-primary bg-primary px-6 py-3 rounded-xl hover:bg-secondary transition-colors shadow-sm text-center">
+                    Ứng tuyển ngay
+                  </button>
+                  <Link href={`/jobs/${job.id}`} className="flex-1 md:flex-none font-body-md text-body-md text-primary bg-surface-container-low px-6 py-3 rounded-xl hover:bg-primary-container/30 transition-colors text-center">
+                    Xem chi tiết
+                  </Link>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
 
-          {/* Job Listings */}
-          <div className="flex-1">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">
-                Tìm thấy <span className="text-[#3525cd]">{MOCK_JOBS.length}</span> việc làm phù hợp
-              </h2>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-500">Sắp xếp theo:</span>
-                <select className="border-none bg-transparent text-sm font-medium text-gray-900 outline-none cursor-pointer">
-                  <option>Mới nhất</option>
-                  <option>Lương cao nhất</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {MOCK_JOBS.map((job) => (
-                <Link key={job.id} href={`/jobs/${job.id}`} className="block group">
-                  <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 h-full flex flex-col border-l-4 border-l-transparent hover:border-l-[#3525cd]">
-                    <div className="flex gap-4 items-start mb-4">
-                      <div className="w-14 h-14 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center flex-shrink-0 text-xl font-bold text-[#3525cd]">
-                        {job.company.logo}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#3525cd] transition-colors line-clamp-2">
-                          {job.title}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">{job.company.name}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-5">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-50 text-gray-600 text-xs font-medium">
-                        <span className="material-symbols-outlined text-[14px]">location_on</span>
-                        {job.location}
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 text-[#3525cd] text-xs font-medium">
-                        <span className="material-symbols-outlined text-[14px]">payments</span>
-                        {formatCurrency(job.salaryMin)} - {formatCurrency(job.salaryMax)}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-1.5 mb-5 mt-auto">
-                      {job.skills.slice(0, 3).map(skill => (
-                        <span key={skill} className="px-2.5 py-1 rounded-md border border-gray-100 text-gray-500 text-[11px] font-medium bg-white">
-                          {skill}
-                        </span>
-                      ))}
-                      {job.skills.length > 3 && (
-                        <span className="px-2.5 py-1 rounded-md border border-gray-100 text-gray-500 text-[11px] font-medium bg-white">
-                          +{job.skills.length - 3}
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">schedule</span>
-                        {job.postedAt}
-                      </span>
-                      <span className="text-sm font-semibold text-[#3525cd] group-hover:underline">
-                        Xem chi tiết
-                      </span>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-
-            {/* Pagination Placeholder */}
-            <div className="mt-10 flex justify-center">
-              <div className="flex gap-2">
-                <button className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
-                </button>
-                <button className="w-10 h-10 rounded-xl bg-[#3525cd] text-white flex items-center justify-center font-semibold shadow-md shadow-[#3525cd]/20">1</button>
-                <button className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 font-semibold transition-colors">2</button>
-                <button className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 font-semibold transition-colors">3</button>
-                <button className="w-10 h-10 rounded-xl border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors">
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
-              </div>
-            </div>
+          {/* Load More */}
+          <div className="mt-8 flex justify-center">
+            <button className="font-body-md text-body-md text-primary border border-primary-container px-8 py-3 rounded-xl hover:bg-surface-container-low transition-colors shadow-sm flex items-center gap-2">
+              Tải thêm công việc
+              <span className="material-symbols-outlined text-[20px]">expand_more</span>
+            </button>
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </div>
   );
 }
+

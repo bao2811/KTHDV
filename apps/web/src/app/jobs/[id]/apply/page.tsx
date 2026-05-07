@@ -35,10 +35,10 @@ export default function ApplyJobPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff] py-12 px-4 sm:px-6">
+    <div className="min-h-screen bg-background py-12 px-4 sm:px-6">
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <Link href={`/jobs/${params.id}`} className="text-sm font-medium text-slate-500 hover:text-[#3525cd] flex items-center">
+          <Link href={`/jobs/${params.id}`} className="text-sm font-medium text-slate-500 hover:text-primary flex items-center">
             <span className="material-symbols-outlined text-[18px] mr-1">arrow_back</span>
             Quay lại chi tiết công việc
           </Link>
@@ -49,7 +49,7 @@ export default function ApplyJobPage() {
           <div className="bg-gradient-to-r from-indigo-50 to-white px-8 py-6 border-b border-slate-100">
             <h1 className="text-2xl font-bold text-slate-900 mb-2">Đơn ứng tuyển</h1>
             <div className="bg-white p-4 rounded-xl border border-slate-100 mt-4 flex items-center space-x-4">
-              <div className="w-12 h-12 bg-indigo-100 text-[#3525cd] rounded-lg flex items-center justify-center font-bold text-xl">
+              <div className="w-12 h-12 bg-indigo-100 text-primary rounded-lg flex items-center justify-center font-bold text-xl">
                 {MOCK_JOB_INFO.companyName.charAt(0)}
               </div>
               <div>
@@ -63,7 +63,7 @@ export default function ApplyJobPage() {
           <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-900 flex items-center">
-                <span className="material-symbols-outlined text-[#3525cd] mr-2">description</span>
+                <span className="material-symbols-outlined text-primary mr-2">description</span>
                 Chọn CV của bạn
               </h3>
               
@@ -73,7 +73,7 @@ export default function ApplyJobPage() {
                     key={cv.id} 
                     className={`flex items-center p-4 border rounded-xl cursor-pointer transition-colors ${
                       selectedCv === cv.id 
-                        ? 'border-[#3525cd] bg-indigo-50/30' 
+                        ? 'border-primary bg-indigo-50/30' 
                         : 'border-slate-200 hover:border-slate-300'
                     }`}
                   >
@@ -83,12 +83,12 @@ export default function ApplyJobPage() {
                       value={cv.id}
                       checked={selectedCv === cv.id}
                       onChange={(e) => setSelectedCv(e.target.value)}
-                      className="w-4 h-4 text-[#3525cd] focus:ring-[#3525cd] border-slate-300"
+                      className="w-4 h-4 text-primary focus:ring-primary border-slate-300"
                     />
                     <div className="ml-3 flex-1 flex justify-between items-center">
                       <span className="font-medium text-slate-900">{cv.fileName}</span>
                       {cv.isPrimary && (
-                        <span className="px-2 py-0.5 text-[10px] font-bold bg-[#3525cd]/10 text-[#3525cd] rounded-full uppercase">
+                        <span className="px-2 py-0.5 text-[10px] font-bold bg-primary/10 text-primary rounded-full uppercase">
                           Mặc định
                         </span>
                       )}
@@ -98,7 +98,7 @@ export default function ApplyJobPage() {
               </div>
 
               <div className="mt-4">
-                <Link href="/candidate/resumes" className="text-sm text-[#3525cd] font-medium hover:underline flex items-center">
+                <Link href="/candidate/resumes" className="text-sm text-primary font-medium hover:underline flex items-center">
                   <span className="material-symbols-outlined text-[16px] mr-1">add_circle</span>
                   Tải lên CV mới
                 </Link>
@@ -116,7 +116,7 @@ export default function ApplyJobPage() {
               <button 
                 type="submit" 
                 disabled={!selectedCv || isSubmitting}
-                className="px-8 py-3 bg-[#3525cd] text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-8 py-3 bg-primary text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
               >
                 {isSubmitting ? (
                   <>

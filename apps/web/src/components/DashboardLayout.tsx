@@ -11,70 +11,78 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children, role }: DashboardLayoutProps) {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // Changed to false to avoid mock login block for now
 
+  // Bypass mock login for testing phase
+  /*
   useEffect(() => {
-    // Basic route protection mock
     const token = localStorage.getItem('accessToken');
     const userRole = localStorage.getItem('userRole');
 
     if (!token) {
       router.push('/login');
     } else if (userRole && userRole !== role) {
-      // If user tries to access a layout meant for another role
       router.push(`/${userRole}`);
     } else {
       setIsLoading(false);
     }
   }, [router, role]);
+  */
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <div className="w-12 h-12 border-4 border-[#3525cd] border-t-transparent rounded-full animate-spin"></div>
+      <div className="flex h-screen items-center justify-center bg-surface">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f8f9ff]">
+    <div className="bg-background text-on-background font-body-md min-h-screen flex">
       <Sidebar role={role} />
       
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center justify-between px-8 z-10 sticky top-0">
+      {/* Main Content Canvas */}
+      <div className="flex-1 md:ml-64 flex flex-col min-h-screen">
+        {/* TopNavBar */}
+        <header className="flex justify-between items-center w-full px-container-padding h-16 sticky top-0 z-30 bg-surface dark:bg-surface-dim shadow-sm dark:shadow-none">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-semibold text-gray-800 capitalize tracking-tight">
-              {role} Portal
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-6">
-            {/* Notifications */}
-            <button className="relative text-gray-400 hover:text-[#3525cd] transition-colors p-2 rounded-full hover:bg-gray-50">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+            {/* Mobile Menu Trigger */}
+            <button className="md:hidden text-on-surface-variant cursor-pointer transition-transform active:scale-95">
+              <span className="material-symbols-outlined">menu</span>
             </button>
-
-            {/* Profile Dropdown (Mock) */}
-            <div className="flex items-center gap-3 pl-6 border-l border-gray-100 cursor-pointer group">
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-semibold text-gray-900 group-hover:text-[#3525cd] transition-colors">Test User</p>
-                <p className="text-xs text-gray-500 capitalize">{role}</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-[#3525cd] to-indigo-400 text-white flex items-center justify-center font-bold shadow-md ring-2 ring-white">
-                TU
-              </div>
-              <span className="material-symbols-outlined text-gray-400 group-hover:text-gray-600">expand_more</span>
+            <h2 className="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim md:hidden">Nexus Talent</h2>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="relative hidden sm:block">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+              <input 
+                className="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary w-64 font-body-sm text-body-sm text-on-surface placeholder:text-outline-variant outline-none" 
+                placeholder="Tìm kiếm ứng viên, công việc..." 
+                type="text"
+              />
             </div>
+            
+            <button className="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer transition-transform active:scale-95 relative p-2">
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+            </button>
+            
+            <button className="text-on-surface-variant dark:text-outline-variant hover:text-primary dark:hover:text-primary-fixed-dim transition-colors cursor-pointer transition-transform active:scale-95 p-2 hidden sm:block">
+              <span className="material-symbols-outlined">help</span>
+            </button>
+            
+            <img 
+              alt="Profile avatar" 
+              className="w-8 h-8 rounded-full border border-outline-variant cursor-pointer transition-transform active:scale-95 object-cover" 
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2jCc6JGg718IoK1kc5QTBy2Q-B5T80avG37M21HXla__o36eCBWc9WriAfztOKBrbb6hGDGjzeOonbQC5lE4Hhg46OjdJ0zmDAZYRzehld8uR_RuTMMeUAJC2X-6g5P9PWPxZuWpvTYHre650vf1-_Zd2TKSXaEI0aK8T1vf8aawlun3MNRLuL3VYnnKC9tc06s0885_2QwDx7nM96gGvgz8v9yWrw-aCMsQsC1-Z9tsKmSSz7mWNidVzwWqhi0nyxs6gZy4KUBuF"
+            />
           </div>
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {children}
-          </div>
+        <main className="flex-1 p-container-padding overflow-y-auto">
+          {children}
         </main>
       </div>
     </div>

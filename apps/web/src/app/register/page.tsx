@@ -46,8 +46,8 @@ export default function RegisterPage() {
         </Link>
         
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Request Access</h1>
-          <p className="text-slate-500 mb-8">Join the world's most distinguished executive talent network.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Yêu cầu quyền truy cập</h1>
+          <p className="text-slate-500 mb-8">Tham gia mạng lưới tài năng lãnh đạo ưu tú nhất thế giới.</p>
           
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm mb-6 flex items-center gap-2">
@@ -59,7 +59,7 @@ export default function RegisterPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2" htmlFor="fullName">
-                Full Name
+                Họ và tên
               </label>
               <input
                 id="fullName"
@@ -74,7 +74,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2" htmlFor="email">
-                Corporate Email
+                Email doanh nghiệp
               </label>
               <input
                 id="email"
@@ -89,7 +89,7 @@ export default function RegisterPage() {
             
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2" htmlFor="password">
-                Create Password
+                Tạo mật khẩu
               </label>
               <input
                 id="password"
@@ -100,13 +100,13 @@ export default function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <p className="text-[10px] text-slate-400 mt-2">At least 8 characters, including 1 uppercase, 1 lowercase and 1 number.</p>
+              <p className="text-[10px] text-slate-400 mt-2">Ít nhất 8 ký tự, bao gồm 1 chữ hoa, 1 chữ thường và 1 chữ số.</p>
             </div>
             
             <div className="flex items-start gap-2">
               <input type="checkbox" id="terms" className="mt-1 rounded border-slate-300 text-primary focus:ring-primary" required />
               <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed">
-                I agree to the <Link href="#" className="font-bold text-primary hover:underline">Terms of Service</Link> and <Link href="#" className="font-bold text-primary hover:underline">Discretionary Agreement</Link>.
+                Tôi đồng ý với <Link href="#" className="font-bold text-primary hover:underline">Điều khoản dịch vụ</Link> và <Link href="#" className="font-bold text-primary hover:underline">Thỏa thuận bảo mật</Link>.
               </label>
             </div>
             
@@ -115,14 +115,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full py-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Processing Request..." : "Apply for Access"}
+              {loading ? "Đang xử lý yêu cầu..." : "Đăng ký truy cập"}
             </button>
           </form>
           
           <div className="mt-8 pt-8 border-t border-slate-50 text-center">
             <p className="text-slate-500 text-sm">
-              Already have an account?{" "}
-              <Link href="/login" className="font-bold text-primary hover:underline">Sign In</Link>
+              Đã có tài khoản?{" "}
+              <Link href="/login" className="font-bold text-primary hover:underline">Đăng nhập</Link>
             </p>
           </div>
         </div>

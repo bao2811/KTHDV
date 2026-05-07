@@ -39,21 +39,21 @@ export default function ScheduleInterview() {
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700">Vị trí tuyển dụng <span className="text-red-500">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.jobId}
                 onChange={e => setFormData({...formData, jobId: e.target.value})}
                 required
               >
                 <option value="">Chọn vị trí...</option>
-                <option value="1">Senior Frontend Developer</option>
-                <option value="2">Backend Engineer (Java)</option>
+                <option value="1">Lập trình viên Frontend Cao cấp</option>
+                <option value="2">Kỹ sư Backend (Java)</option>
               </select>
             </div>
 
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700">Ứng viên <span className="text-red-500">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.candidateId}
                 onChange={e => setFormData({...formData, candidateId: e.target.value})}
                 required
@@ -68,7 +68,7 @@ export default function ScheduleInterview() {
               <label className="block text-sm font-bold text-slate-700">Ngày phỏng vấn <span className="text-red-500">*</span></label>
               <input 
                 type="date" 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.date}
                 onChange={e => setFormData({...formData, date: e.target.value})}
                 required
@@ -79,7 +79,7 @@ export default function ScheduleInterview() {
               <label className="block text-sm font-bold text-slate-700">Giờ bắt đầu <span className="text-red-500">*</span></label>
               <input 
                 type="time" 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.time}
                 onChange={e => setFormData({...formData, time: e.target.value})}
                 required
@@ -89,7 +89,7 @@ export default function ScheduleInterview() {
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700">Thời lượng (phút) <span className="text-red-500">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.duration}
                 onChange={e => setFormData({...formData, duration: e.target.value})}
                 required
@@ -105,7 +105,7 @@ export default function ScheduleInterview() {
             <div className="space-y-2">
               <label className="block text-sm font-bold text-slate-700">Hình thức <span className="text-red-500">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.type}
                 onChange={e => setFormData({...formData, type: e.target.value})}
                 required
@@ -122,7 +122,7 @@ export default function ScheduleInterview() {
               <input 
                 type="url" 
                 placeholder="https://meet.google.com/..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.link}
                 onChange={e => setFormData({...formData, link: e.target.value})}
               />
@@ -133,7 +133,7 @@ export default function ScheduleInterview() {
               <input 
                 type="text" 
                 placeholder="Phòng họp A, Tầng 3, Tòa nhà X..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                 value={formData.link}
                 onChange={e => setFormData({...formData, link: e.target.value})}
               />
@@ -145,7 +145,7 @@ export default function ScheduleInterview() {
             <textarea 
               rows={4}
               placeholder="Chuẩn bị CV bản cứng, đến sớm 10 phút..."
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all resize-none"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
               value={formData.note}
               onChange={e => setFormData({...formData, note: e.target.value})}
             ></textarea>
@@ -160,7 +160,7 @@ export default function ScheduleInterview() {
             </Link>
             <button 
               type="submit"
-              className="px-6 py-2.5 text-white font-bold bg-[#3525cd] hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+              className="px-6 py-2.5 text-white font-bold bg-primary hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
             >
               Lưu & Gửi Email
             </button>

@@ -7,191 +7,249 @@ import Link from 'next/link';
 const mockJobs = [
   {
     id: 'job-1',
-    title: 'Senior Frontend Developer (React/Next.js)',
-    company: 'NexusTech',
-    type: 'FULL_TIME',
-    salary: '20M - 45M VND',
-    applicants: 45,
+    title: 'Kỹ sư Frontend Cao cấp',
+    department: 'Kỹ thuật',
+    reqCode: 'Yêu cầu #4920 • Hà Nội, VN',
+    icon: 'code',
+    applicants: 42,
     status: 'ACTIVE',
   },
   {
     id: 'job-2',
-    title: 'Backend Engineer (Node.js)',
-    company: 'Global Solutions',
-    type: 'REMOTE',
-    salary: '25M - 50M VND',
-    applicants: 32,
-    status: 'ACTIVE',
+    title: 'Quản lý Tiếp thị Sản phẩm',
+    department: 'Marketing',
+    reqCode: 'Yêu cầu #4925 • Từ xa',
+    icon: 'campaign',
+    applicants: 0,
+    status: 'DRAFT',
   },
   {
     id: 'job-3',
-    title: 'Product Manager',
-    company: 'InnoTech',
-    type: 'FULL_TIME',
-    salary: '30M - 60M VND',
-    applicants: 0,
-    status: 'PENDING',
-  },
-  {
-    id: 'job-4',
-    title: 'UI/UX Designer',
-    company: 'Creative Studio',
-    type: 'FULL_TIME',
-    salary: '15M - 30M VND',
-    applicants: 51,
+    title: 'Đại diện Hỗ trợ Khách hàng',
+    department: 'Vận hành',
+    reqCode: 'Yêu cầu #4810 • TP.HCM, VN',
+    icon: 'support_agent',
+    applicants: 128,
     status: 'CLOSED',
-  },
-  {
-    id: 'job-5',
-    title: 'Marketing Specialist',
-    company: 'NexusTech',
-    type: 'PART_TIME',
-    salary: '10M - 20M VND',
-    applicants: 0,
-    status: 'DRAFT',
   },
 ];
 
 const FILTER_TABS = [
-  { id: 'ALL', label: 'Tất cả' },
+  { id: 'ALL', label: 'Tất cả công việc' },
+  { id: 'ACTIVE', label: 'Đang hoạt động' },
   { id: 'DRAFT', label: 'Bản nháp' },
-  { id: 'PENDING', label: 'Chờ duyệt' },
-  { id: 'ACTIVE', label: 'Đang tuyển' },
-  { id: 'CLOSED', label: 'Đã đóng' },
 ];
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'ACTIVE':
-      return <span className="px-2.5 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Đang tuyển</span>;
-    case 'PENDING':
-      return <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">Chờ duyệt</span>;
-    case 'CLOSED':
-      return <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Đã đóng</span>;
-    case 'DRAFT':
-      return <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">Bản nháp</span>;
-    default:
-      return <span className="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">{status}</span>;
-  }
-};
-
-export default function HRJobsManagement() {
+export default function JobManagement() {
   const [activeFilter, setActiveFilter] = useState('ALL');
-  const [searchQuery, setSearchQuery] = useState('');
 
   const filteredJobs = mockJobs.filter(job => {
-    const matchesFilter = activeFilter === 'ALL' || job.status === activeFilter;
-    const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          job.company.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return activeFilter === 'ALL' || job.status === activeFilter;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quản lý tin tuyển dụng</h1>
-          <p className="text-slate-500 mt-1">Tạo mới, chỉnh sửa và theo dõi các chiến dịch tuyển dụng.</p>
+    <div className="flex-1 flex flex-col h-full -mx-container-padding -my-container-padding bg-surface-container-lowest">
+      {/* Top Header Bar */}
+      <header className="flex justify-between items-center w-full px-container-padding h-16 shrink-0 bg-surface-container-lowest border-b border-surface-variant z-10">
+        <div className="flex items-center gap-8">
+          <div className="font-headline-lg text-headline-lg font-bold text-on-surface">
+            Nexus Talent
+          </div>
+          <div className="hidden lg:flex items-center bg-surface-container-lowest border border-outline-variant rounded px-4 py-2 w-64 focus-within:border-on-surface transition-colors">
+            <span className="material-symbols-outlined text-outline text-[20px] mr-2">search</span>
+            <input 
+              className="bg-transparent border-none outline-none text-body-sm font-body-sm text-on-surface w-full placeholder-outline focus:ring-0 p-0" 
+              placeholder="Tìm kiếm ứng viên hoặc công việc..." 
+              type="text"
+            />
+          </div>
         </div>
-        <div>
-          <Link href="/hr/jobs/create" className="px-4 py-2.5 bg-[#3525cd] text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center">
-            <span className="material-symbols-outlined text-[20px] mr-1.5">add</span>
-            Tạo tin mới
+        <div className="flex items-center gap-4">
+          <button className="w-10 h-10 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant/50 transition-colors cursor-pointer active:scale-95">
+            <span className="material-symbols-outlined">notifications</span>
+          </button>
+          <button className="w-10 h-10 rounded flex items-center justify-center text-on-surface hover:bg-surface-variant/50 transition-colors cursor-pointer active:scale-95">
+            <span className="material-symbols-outlined">help</span>
+          </button>
+          <div className="w-9 h-9 rounded bg-surface-variant overflow-hidden cursor-pointer border border-outline-variant ml-2">
+            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-primary font-bold">JD</div>
+          </div>
+        </div>
+      </header>
+
+      {/* Page Content Canvas */}
+      <main className="p-container-padding flex-1 max-w-7xl mx-auto w-full overflow-y-auto custom-scrollbar">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+          <div>
+            <h1 className="font-headline-xl text-headline-xl text-on-surface">Quản lý công việc</h1>
+            <p className="font-body-md text-body-md text-outline mt-1">Quản lý các yêu cầu tuyển dụng và theo dõi luồng ứng viên.</p>
+          </div>
+          <Link href="/hr/jobs/create">
+            <button className="bg-primary text-on-primary font-label-bold text-label-bold py-3 px-6 rounded hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2 self-start sm:self-auto shadow-sm">
+              <span className="material-symbols-outlined text-[18px]">add</span>
+              Đăng công việc mới
+            </button>
           </Link>
         </div>
-      </div>
 
-      {/* Tabs and Search */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex overflow-x-auto pb-2 lg:pb-0 -mb-2 lg:-mb-0 hide-scrollbar space-x-2">
-          {FILTER_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveFilter(tab.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                activeFilter === tab.id 
-                  ? 'bg-indigo-50 text-[#3525cd]' 
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              {tab.label}
+        {/* Data Table Container (High-end Card UI) */}
+        <div className="bg-surface-container-lowest rounded shadow-sm border border-surface-variant overflow-hidden">
+          {/* Table Filters/Actions Bar */}
+          <div className="p-4 border-b border-surface-variant flex items-center justify-between bg-surface-container-lowest">
+            <div className="flex gap-2">
+              {FILTER_TABS.map((tab) => {
+                const isActive = activeFilter === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveFilter(tab.id)}
+                    className={`px-4 py-2 text-body-sm font-label-bold rounded transition-colors border ${
+                      isActive 
+                        ? 'bg-on-surface text-surface-container-lowest border-on-surface' 
+                        : 'text-on-surface hover:bg-surface-variant/50 border-transparent'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <button className="text-on-surface hover:text-primary transition-colors flex items-center gap-1 font-body-sm text-body-sm border border-outline-variant px-3 py-1.5 rounded">
+              <span className="material-symbols-outlined text-[18px]">filter_list</span> Bộ lọc
             </button>
-          ))}
-        </div>
-        <div className="relative">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-          <input 
-            type="text" 
-            placeholder="Tìm theo tiêu đề, công ty..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full lg:w-80 pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] focus:bg-white transition-all text-sm"
-          />
-        </div>
-      </div>
+          </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[900px]">
-            <thead>
-              <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-100">
-                <th className="px-6 py-4 font-medium">Tiêu đề & Công ty</th>
-                <th className="px-6 py-4 font-medium">Loại / Lương</th>
-                <th className="px-6 py-4 font-medium">Ứng viên</th>
-                <th className="px-6 py-4 font-medium">Trạng thái</th>
-                <th className="px-6 py-4 font-medium text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {filteredJobs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
-                    Không tìm thấy tin tuyển dụng nào phù hợp.
-                  </td>
+          {/* Actual Table */}
+          <div className="overflow-x-auto w-full">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-surface-container-lowest border-b border-surface-variant">
+                  <th className="p-4 font-label-bold text-label-bold text-outline uppercase tracking-wider w-1/3">Tiêu đề công việc</th>
+                  <th className="p-4 font-label-bold text-label-bold text-outline uppercase tracking-wider">Phòng ban</th>
+                  <th className="p-4 font-label-bold text-label-bold text-outline uppercase tracking-wider">Trạng thái</th>
+                  <th className="p-4 font-label-bold text-label-bold text-outline uppercase tracking-wider">Ứng viên</th>
+                  <th className="p-4 font-label-bold text-label-bold text-outline uppercase tracking-wider text-right">Thao tác</th>
                 </tr>
-              ) : (
-                filteredJobs.map((job) => (
-                  <tr key={job.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-bold text-slate-900">{job.title}</div>
-                      <div className="text-sm text-slate-500 mt-0.5">{job.company}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-700">{job.type}</div>
-                      <div className="text-sm text-slate-500 mt-0.5">{job.salary}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-full text-sm">
-                        {job.applicants}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      {getStatusBadge(job.status)}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end space-x-2">
+              </thead>
+              <tbody className="divide-y divide-surface-variant">
+                {filteredJobs.map((job) => {
+                  const isClosed = job.status === 'CLOSED';
+                  const opacityClass = isClosed ? 'opacity-60' : '';
+                  
+                  return (
+                    <tr key={job.id} className="hover:bg-surface-variant/20 transition-colors group cursor-default bg-surface-container-lowest">
+                      <td className={`p-4 ${opacityClass}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded border border-outline-variant flex items-center justify-center ${isClosed ? 'text-outline' : 'text-on-surface'}`}>
+                            <span className="material-symbols-outlined">{job.icon}</span>
+                          </div>
+                          <div>
+                            <p className={`font-label-bold text-label-bold text-[14px] ${isClosed ? 'text-outline line-through' : 'text-on-surface'}`}>
+                              {job.title}
+                            </p>
+                            <p className="font-body-sm text-body-sm text-outline text-[12px] mt-0.5">{job.reqCode}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className={`p-4 font-body-sm text-body-sm ${isClosed ? 'text-outline opacity-60' : 'text-on-surface'}`}>
+                        {job.department}
+                      </td>
+                      <td className="p-4">
                         {job.status === 'ACTIVE' && (
-                          <button className="p-1.5 text-slate-400 hover:text-[#3525cd] hover:bg-indigo-50 rounded-md transition-colors" title="Xem danh sách ứng viên">
-                            <span className="material-symbols-outlined text-[20px]">group</span>
-                          </button>
+                          <span className="inline-flex items-center px-2.5 py-1 text-[11px] font-label-bold text-primary border border-primary uppercase tracking-wider">
+                            Đang hoạt động
+                          </span>
                         )}
-                        <Link href={`/hr/jobs/${job.id}/edit`} className="p-1.5 text-slate-400 hover:text-[#3525cd] hover:bg-indigo-50 rounded-md transition-colors" title="Chỉnh sửa">
-                          <span className="material-symbols-outlined text-[20px]">edit</span>
-                        </Link>
-                        <button className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors" title="Xóa">
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                        {job.status === 'DRAFT' && (
+                          <span className="inline-flex items-center px-2.5 py-1 text-[11px] font-label-bold text-on-surface border border-on-surface uppercase tracking-wider">
+                            Bản nháp
+                          </span>
+                        )}
+                        {job.status === 'CLOSED' && (
+                          <span className="inline-flex items-center px-2.5 py-1 text-[11px] font-label-bold text-outline border border-outline uppercase tracking-wider">
+                            Đã đóng
+                          </span>
+                        )}
+                      </td>
+                      <td className={`p-4 ${opacityClass}`}>
+                        {job.status === 'DRAFT' ? (
+                          <span className="font-label-bold text-label-bold text-outline">—</span>
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <span className="font-label-bold text-label-bold text-on-surface w-6">{job.applicants}</span>
+                            <div className="w-24 h-1.5 bg-surface-variant overflow-hidden">
+                              <div className={`h-full ${isClosed ? 'bg-outline' : 'bg-primary'}`} style={{ width: `${Math.min(job.applicants, 100)}%` }}></div>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {job.status !== 'DRAFT' && (
+                            <button className="p-2 text-outline hover:text-on-surface rounded transition-colors border border-transparent hover:border-outline-variant" title={isClosed ? 'Xem báo cáo' : 'Xem ứng viên'}>
+                              <span className="material-symbols-outlined text-[20px]">{isClosed ? 'assessment' : 'groups'}</span>
+                            </button>
+                          )}
+                          {!isClosed && (
+                            <button className="p-2 text-outline hover:text-on-surface rounded transition-colors border border-transparent hover:border-outline-variant" title="Sửa">
+                              <span className="material-symbols-outlined text-[20px]">edit</span>
+                            </button>
+                          )}
+                          {job.status === 'ACTIVE' && (
+                            <button className="p-2 text-outline hover:text-on-surface rounded transition-colors border border-transparent hover:border-outline-variant" title="Đóng công việc">
+                              <span className="material-symbols-outlined text-[20px]">block</span>
+                            </button>
+                          )}
+                          {job.status === 'DRAFT' && (
+                            <button className="p-2 text-outline hover:text-on-surface rounded transition-colors border border-transparent hover:border-outline-variant" title="Xóa">
+                              <span className="material-symbols-outlined text-[20px]">delete</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination Footer */}
+          <div className="p-4 border-t border-surface-variant bg-surface-container-lowest flex items-center justify-between">
+            <span className="font-body-sm text-body-sm text-outline">Hiển thị từ 1 đến {filteredJobs.length} trong số {mockJobs.length} mục</span>
+            <div className="flex gap-1">
+              <button className="w-8 h-8 flex items-center justify-center rounded border border-transparent text-outline hover:border-outline-variant transition-colors disabled:opacity-50" disabled>
+                <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+              </button>
+              <button className="w-8 h-8 flex items-center justify-center rounded border border-on-surface bg-on-surface text-surface-container-lowest font-label-bold text-label-bold">1</button>
+              <button className="w-8 h-8 flex items-center justify-center rounded border border-transparent text-on-surface hover:border-outline-variant transition-colors font-label-bold text-label-bold">2</button>
+              <button className="w-8 h-8 flex items-center justify-center rounded border border-transparent text-outline hover:border-outline-variant transition-colors">
+                <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.1);
+          border-radius: 20px;
+          border: 2px solid transparent;
+          background-clip: content-box;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(0, 0, 0, 0.2);
+        }
+      `}</style>
     </div>
   );
 }

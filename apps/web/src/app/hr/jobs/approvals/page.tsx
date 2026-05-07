@@ -6,21 +6,21 @@ import { useState } from 'react';
 const mockPendingJobs = [
   {
     id: 'job-3',
-    title: 'Product Manager',
+    title: 'Quản lý Sản phẩm',
     company: 'InnoTech',
-    requester: 'Nguyen Van HR',
+    requester: 'Nguyễn Văn Nhân sự',
     requestedAt: '2026-05-06 14:30',
-    type: 'FULL_TIME',
-    salary: '30M - 60M VND',
+    type: 'Toàn thời gian',
+    salary: '30Tr - 60Tr VNĐ',
   },
   {
     id: 'job-6',
-    title: 'Senior DevOps Engineer',
+    title: 'Kỹ sư DevOps Cao cấp',
     company: 'CloudCorp',
-    requester: 'Tran Thi Manager',
+    requester: 'Trần Thị Quản lý',
     requestedAt: '2026-05-07 09:15',
-    type: 'REMOTE',
-    salary: '40M - 80M VND',
+    type: 'Từ xa',
+    salary: '40Tr - 80Tr VNĐ',
   }
 ];
 
@@ -84,7 +84,7 @@ export default function HRJobsApprovals() {
                         <span className="flex items-center"><span className="material-symbols-outlined text-[16px] mr-1">payments</span> {job.salary}</span>
                       </div>
                       <div className="mt-3">
-                        <button className="text-sm font-medium text-[#3525cd] hover:underline flex items-center">
+                        <button className="text-sm font-medium text-primary hover:underline flex items-center">
                           <span className="material-symbols-outlined text-[16px] mr-1">visibility</span>
                           Xem trước nội dung tin
                         </button>
@@ -155,7 +155,7 @@ export default function HRJobsApprovals() {
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Nhập ghi chú hoặc lý do từ chối..." 
-                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-colors"
+                className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
               ></textarea>
             </div>
 

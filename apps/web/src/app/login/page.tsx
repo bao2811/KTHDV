@@ -60,8 +60,8 @@ export default function LoginPage() {
         </Link>
         
         <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h1>
-          <p className="text-slate-500 mb-8">Enter your credentials to access the Executive Suite.</p>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Chào mừng trở lại</h1>
+          <p className="text-slate-500 mb-8">Nhập thông tin đăng nhập để truy cập vào hệ thống.</p>
           
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm mb-6 flex items-center gap-2">
@@ -73,7 +73,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2" htmlFor="email">
-                Corporate Email
+                Email doanh nghiệp
               </label>
               <input
                 id="email"
@@ -88,7 +88,7 @@ export default function LoginPage() {
             
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2" htmlFor="password">
-                Password
+                Mật khẩu
               </label>
               <input
                 id="password"
@@ -104,9 +104,9 @@ export default function LoginPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="remember" className="rounded border-slate-300 text-primary focus:ring-primary" />
-                <label htmlFor="remember" className="text-sm text-slate-600">Remember me</label>
+                <label htmlFor="remember" className="text-sm text-slate-600">Ghi nhớ đăng nhập</label>
               </div>
-              <Link href="#" className="text-sm font-bold text-primary hover:underline">Forgot password?</Link>
+              <Link href="#" className="text-sm font-bold text-primary hover:underline">Quên mật khẩu?</Link>
             </div>
             
             <button
@@ -114,22 +114,22 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full py-4 bg-primary text-white rounded-xl font-bold hover:bg-primary-container transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Authenticating..." : "Sign In"}
+              {loading ? "Đang xác thực..." : "Đăng nhập"}
             </button>
           </form>
           
           <div className="mt-8 pt-8 border-t border-slate-50 text-center">
             <p className="text-slate-500 text-sm">
-              Don't have an account?{" "}
-              <Link href="/register" className="font-bold text-primary hover:underline">Request Access</Link>
+              Chưa có tài khoản?{" "}
+              <Link href="/register" className="font-bold text-primary hover:underline">Yêu cầu quyền truy cập</Link>
             </p>
           </div>
         </div>
         
         <div className="mt-8 flex justify-center gap-6">
-          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Privacy Policy</Link>
-          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Terms of Service</Link>
-          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Contact Concierge</Link>
+          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Chính sách bảo mật</Link>
+          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Điều khoản dịch vụ</Link>
+          <Link href="#" className="text-xs text-slate-400 hover:text-slate-900 transition-all">Liên hệ hỗ trợ</Link>
         </div>
       </div>
     </div>

@@ -5,65 +5,62 @@ import Link from 'next/link';
 
 // --- MOCK DATA ---
 const mockStats = {
-  total: 12,
-  pending: 3,
-  interviewing: 2,
-  offered: 1,
+  applied: 24,
+  inReview: 8,
+  interviews: 3,
 };
 
 const mockRecentApplications = [
   {
     id: 'app-1',
-    jobTitle: 'Senior Frontend Developer',
-    companyName: 'NexusTech',
-    appliedAt: '2026-05-01',
-    status: 'INTERVIEWING',
+    jobTitle: 'Lập trình viên Frontend Cao cấp',
+    companyName: 'TechFlow Systems',
+    appliedAt: 'Đã ứng tuyển 2 ngày trước',
+    status: 'Đang xem xét',
+    statusIcon: 'hourglass_empty',
+    icon: 'code'
   },
   {
     id: 'app-2',
-    jobTitle: 'Backend Engineer',
-    companyName: 'Global Solutions',
-    appliedAt: '2026-04-28',
-    status: 'SUBMITTED',
+    jobTitle: 'Nhà thiết kế UX/UI',
+    companyName: 'Creative Catalyst',
+    appliedAt: 'Đã ứng tuyển 1 tuần trước',
+    status: 'Đang phỏng vấn',
+    statusIcon: 'event',
+    icon: 'design_services'
   },
   {
     id: 'app-3',
-    jobTitle: 'UI/UX Designer',
-    companyName: 'Creative Studio',
-    appliedAt: '2026-04-15',
-    status: 'OFFERED',
-  },
-  {
-    id: 'app-4',
-    jobTitle: 'Product Manager',
-    companyName: 'InnoTech',
-    appliedAt: '2026-04-10',
-    status: 'REJECTED',
+    jobTitle: 'Quản lý Sản phẩm',
+    companyName: 'Innovate Inc.',
+    appliedAt: 'Đã ứng tuyển 2 tuần trước',
+    status: 'Đã ứng tuyển',
+    statusIcon: 'check_circle',
+    icon: 'architecture'
   },
 ];
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'SUBMITTED':
-      return <span className="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-full font-medium">Chờ duyệt</span>;
-    case 'MATCHED':
-      return <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">Đã khớp</span>;
-    case 'INTERVIEWING':
-      return <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs rounded-full font-medium">Phỏng vấn</span>;
-    case 'OFFERED':
-      return <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium">Đã nhận Offer</span>;
-    case 'REJECTED':
-      return <span className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full font-medium">Từ chối</span>;
-    default:
-      return <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium">{status}</span>;
+const mockRecommendedJobs = [
+  {
+    id: 'job-1',
+    jobTitle: 'Thiết kế Sản phẩm Trưởng',
+    companyName: 'Nova Workspace Solutions',
+    location: 'Từ xa',
+    tags: ['Figma', 'Hệ thống thiết kế']
+  },
+  {
+    id: 'job-2',
+    jobTitle: 'Kỹ sư Frontend (React)',
+    companyName: 'FinTech Global',
+    location: 'New York, Mỹ',
+    tags: ['React', 'TypeScript']
   }
-};
+];
 
 export default function CandidateDashboard() {
-  const [userName, setUserName] = useState<string>('Ứng viên');
+  const [userName, setUserName] = useState<string>('Candidate');
 
   useEffect(() => {
-    // Tạm thời lấy tên từ localStorage nếu có
     const user = localStorage.getItem('user');
     if (user) {
       try {
@@ -75,119 +72,123 @@ export default function CandidateDashboard() {
     }
   }, []);
 
-  const today = new Date().toLocaleDateString('vi-VN', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Xin chào, {userName}! 👋</h1>
-        <p className="text-slate-500 mt-1">{today}</p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">description</span>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">Tổng đơn</p>
-            <p className="text-2xl font-bold text-slate-900">{mockStats.total}</p>
-          </div>
+    <div className="flex flex-col gap-stack-gap-lg">
+      {/* Header section */}
+      <div className="flex justify-between items-end mb-2">
+        <div>
+          <h2 className="font-headline-xl text-headline-xl text-on-surface mb-1">Trung tâm Nghề nghiệp</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant">Theo dõi tiến độ và khám phá những cơ hội mới.</p>
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-slate-50 text-slate-600 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">hourglass_empty</span>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">Đang chờ</p>
-            <p className="text-2xl font-bold text-slate-900">{mockStats.pending}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">calendar_month</span>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">Phỏng vấn</p>
-            <p className="text-2xl font-bold text-slate-900">{mockStats.interviewing}</p>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
-          <div className="w-12 h-12 bg-green-50 text-green-600 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-2xl">celebration</span>
-          </div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">Đã nhận offer</p>
-            <p className="text-2xl font-bold text-slate-900">{mockStats.offered}</p>
+        <div className="text-right hidden sm:block">
+          <p className="font-label-bold text-label-bold text-primary uppercase tracking-wider">Độ hoàn thiện hồ sơ</p>
+          <div className="w-48 h-2 bg-surface-variant rounded-full mt-2 overflow-hidden">
+            <div className="w-4/5 h-full bg-primary rounded-full"></div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Applications */}
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-            <h2 className="text-lg font-bold text-slate-900">Đơn ứng tuyển gần đây</h2>
-            <Link href="/candidate/applications" className="text-sm text-[#3525cd] font-medium hover:underline">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-12 gap-grid-gutter">
+        {/* Stat Card 1 */}
+        <div className="col-span-12 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-surface-variant flex items-start justify-between group hover:border-primary/50 transition-all cursor-pointer">
+          <div>
+            <p className="font-label-bold text-label-bold text-on-surface-variant uppercase mb-2">Đã ứng tuyển</p>
+            <p className="font-headline-xl text-headline-xl text-on-surface">{mockStats.applied}</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>send</span>
+          </div>
+        </div>
+
+        {/* Stat Card 2 */}
+        <div className="col-span-12 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-surface-variant flex items-start justify-between group hover:border-primary/50 transition-all cursor-pointer">
+          <div>
+            <p className="font-label-bold text-label-bold text-on-surface-variant uppercase mb-2">Đang xem xét</p>
+            <p className="font-headline-xl text-headline-xl text-on-surface">{mockStats.inReview}</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>visibility</span>
+          </div>
+        </div>
+
+        {/* Stat Card 3 */}
+        <div className="col-span-12 md:col-span-4 bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-surface-variant flex items-start justify-between group hover:border-primary/50 transition-all cursor-pointer">
+          <div>
+            <p className="font-label-bold text-label-bold text-on-surface-variant uppercase mb-2">Phỏng vấn</p>
+            <p className="font-headline-xl text-headline-xl text-on-surface">{mockStats.interviews}</p>
+          </div>
+          <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>forum</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area: Split 8 / 4 */}
+      <div className="grid grid-cols-12 gap-grid-gutter mt-4">
+        
+        {/* Recent Applications (Left Side) */}
+        <div className="col-span-12 lg:col-span-8 flex flex-col gap-stack-gap-md">
+          <div className="flex justify-between items-center">
+            <h3 className="font-headline-lg text-headline-lg text-on-surface">Ứng tuyển gần đây</h3>
+            <Link href="/candidate/applications" className="font-body-sm text-body-sm font-semibold text-primary hover:underline">
               Xem tất cả
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 text-slate-500 text-sm">
-                  <th className="px-6 py-3 font-medium">Vị trí</th>
-                  <th className="px-6 py-3 font-medium">Công ty</th>
-                  <th className="px-6 py-3 font-medium">Ngày nộp</th>
-                  <th className="px-6 py-3 font-medium">Trạng thái</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {mockRecentApplications.map((app) => (
-                  <tr key={app.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{app.jobTitle}</div>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600">{app.companyName}</td>
-                    <td className="px-6 py-4 text-slate-500">{app.appliedAt}</td>
-                    <td className="px-6 py-4">{getStatusBadge(app.status)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+            {mockRecentApplications.map((app, index) => (
+              <div key={app.id} className={`p-5 flex items-center justify-between hover:bg-surface-container-low transition-colors cursor-pointer group ${index !== mockRecentApplications.length - 1 ? 'border-b border-surface-variant' : ''}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center">
+                    <span className="material-symbols-outlined text-outline">{app.icon}</span>
+                  </div>
+                  <div>
+                    <h4 className="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary transition-colors">{app.jobTitle}</h4>
+                    <p className="font-body-sm text-body-sm text-on-surface-variant">{app.companyName} • {app.appliedAt}</p>
+                  </div>
+                </div>
+                <div className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 font-label-bold text-label-bold ${
+                  app.status === 'Đã ứng tuyển' ? 'bg-surface-variant text-on-surface-variant' : 'bg-primary/10 text-primary'
+                }`}>
+                  <span className="material-symbols-outlined text-[14px]">{app.statusIcon}</span>
+                  {app.status}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Profile Completion Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col items-center justify-center text-center">
-          <div className="relative w-24 h-24 mb-4">
-            {/* Simple circular progress mock */}
-            <svg className="w-full h-full transform -rotate-90">
-              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100" />
-              <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="250" strokeDashoffset="50" className="text-[#3525cd]" />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-xl font-bold text-slate-900">80%</span>
-            </div>
+        {/* Recommended For You (Right Side) */}
+        <div className="col-span-12 lg:col-span-4 flex flex-col gap-stack-gap-md">
+          <h3 className="font-headline-lg text-headline-lg text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">auto_awesome</span>
+            Gợi ý cho bạn
+          </h3>
+          
+          <div className="flex flex-col gap-stack-gap-md">
+            {mockRecommendedJobs.map((job, index) => (
+              <div key={job.id} className="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-surface-variant hover:border-primary/50 transition-all cursor-pointer relative overflow-hidden group">
+                {index === 0 && <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>}
+                <div className="flex justify-between items-start mb-3">
+                  <h4 className="font-body-md text-body-md font-semibold text-on-surface pr-8 group-hover:text-primary transition-colors">{job.jobTitle}</h4>
+                  <span className="material-symbols-outlined text-outline hover:text-primary transition-colors">bookmark_border</span>
+                </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">{job.companyName} • {job.location}</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {job.tags.map(tag => (
+                    <span key={tag} className="bg-surface-container px-2 py-1 rounded text-[11px] font-label-bold text-on-surface-variant">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                <Link href={`/jobs/${job.id}`} className="block text-center w-full bg-primary/10 hover:bg-primary/20 text-primary font-label-bold text-label-bold py-2 rounded-lg transition-colors">
+                  Xem chi tiết
+                </Link>
+              </div>
+            ))}
           </div>
-          <h3 className="text-lg font-bold text-slate-900">Hoàn thiện hồ sơ</h3>
-          <p className="text-sm text-slate-500 mt-2 mb-4">
-            Hồ sơ đầy đủ giúp bạn tăng cơ hội lọt vào mắt xanh của nhà tuyển dụng.
-          </p>
-          <Link href="/candidate/profile" className="inline-flex items-center justify-center px-4 py-2 bg-[#3525cd] text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors w-full">
-            Cập nhật ngay
-          </Link>
         </div>
+        
       </div>
     </div>
   );

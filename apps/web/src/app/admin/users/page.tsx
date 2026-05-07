@@ -37,7 +37,7 @@ export default function AdminUsers() {
           <h1 className="text-2xl font-bold text-slate-900">Quản lý Người dùng</h1>
           <p className="text-slate-500 mt-1">Xem, thêm, sửa, xóa và phân quyền người dùng.</p>
         </div>
-        <button className="px-4 py-2.5 bg-[#3525cd] text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center">
+        <button className="px-4 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center">
           <span className="material-symbols-outlined text-[20px] mr-1.5">person_add</span>
           Thêm người dùng
         </button>
@@ -51,14 +51,14 @@ export default function AdminUsers() {
             <input 
               type="text" 
               placeholder="Tìm theo tên, email..." 
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
             <select 
-              className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3525cd]/20 focus:border-[#3525cd] transition-all text-sm bg-white"
+              className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-white"
               value={roleFilter}
               onChange={e => setRoleFilter(e.target.value)}
             >
@@ -117,7 +117,7 @@ export default function AdminUsers() {
                   </td>
                   <td className="py-4 px-6 text-sm text-slate-600">{user.lastLogin}</td>
                   <td className="py-4 px-6 text-right space-x-2">
-                    <button className="p-1.5 text-slate-400 hover:text-[#3525cd] hover:bg-indigo-50 rounded transition-colors" title="Chỉnh sửa">
+                    <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-indigo-50 rounded transition-colors" title="Chỉnh sửa">
                       <span className="material-symbols-outlined text-[20px]">edit</span>
                     </button>
                     <button className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Xóa">
