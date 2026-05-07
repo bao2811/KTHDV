@@ -18,14 +18,33 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const response = await api.post("/auth/login", { email, password });
-      const { user, accessToken, refreshToken } = response.data;
+      // MOCK LOGIN LOGIC
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
 
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("accessToken", accessToken);
-      localStorage.setItem("refreshToken", refreshToken);
+      let mockRole = 'candidate'; // default
+      if (email.includes('admin')) {
+        mockRole = 'admin';
+      } else if (email.includes('hr')) {
+        mockRole = 'hr';
+      }
 
-      router.push("/");
+      const mockUser = {
+        id: "mock-user-id",
+        email: email,
+        fullName: `${mockRole.toUpperCase()} User`,
+        role: mockRole
+      };
+
+      const mockAccessToken = `mock-access-token-${mockRole}`;
+      const mockRefreshToken = `mock-refresh-token-${mockRole}`;
+
+      localStorage.setItem("user", JSON.stringify(mockUser));
+      localStorage.setItem("accessToken", mockAccessToken);
+      localStorage.setItem("refreshToken", mockRefreshToken);
+      localStorage.setItem("userRole", mockRole);
+
+      // Redirect to the auth callback page to handle the redirection logic properly
+      router.push(`/auth/callback?accessToken=${mockAccessToken}&refreshToken=${mockRefreshToken}`);
     } catch (err: any) {
       setError(err.response?.data?.message || "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.");
     } finally {
