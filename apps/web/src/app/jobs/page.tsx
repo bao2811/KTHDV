@@ -68,7 +68,7 @@ export default function JobsPage() {
             <div className="flex justify-between items-center mb-2">
               <h2 className="text-xl font-bold text-on-surface flex items-center gap-2">
                 Việc làm mới nhất
-                {pagination.total > 0 && (
+                {pagination?.total !== undefined && pagination.total > 0 && (
                   <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-md">
                     {pagination.total} vị trí
                   </span>
@@ -100,7 +100,7 @@ export default function JobsPage() {
             </div>
 
             {/* Pagination */}
-            {pagination.totalPages > 1 && (
+            {pagination?.totalPages && pagination.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8">
                 {Array.from({ length: pagination.totalPages }).map((_, i) => (
                   <button

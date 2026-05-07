@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useJobs } from '@/hooks/useJobs';
+import { Job } from '@/types';
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -104,7 +105,7 @@ export default function JobManagement() {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
               </div>
             ) : jobs.length > 0 ? (
-              jobs.map((job) => (
+              jobs.map((job: Job) => (
                 <div key={job.id} className="group bg-surface-container-low rounded-2xl p-6 border border-surface-variant/50 hover:border-primary/30 hover:shadow-ambient-card transition-all flex flex-col md:flex-row justify-between items-center gap-6">
                   <div className="flex items-center gap-6 flex-1">
                     <div className="w-14 h-14 bg-surface-container-highest rounded-xl flex items-center justify-center text-primary">

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { jobService } from "@/services/job.service";
-import { Job } from "@/types";
+import { Job, ApiResponse } from "@/types";
 
 export function useJobs(initialParams: any = {}) {
   const [params, setParams] = useState({
@@ -11,17 +11,20 @@ export function useJobs(initialParams: any = {}) {
     ...initialParams
   });
   
-  const [data, setData] = useState<any>({ data: [], pagination: { total: 0, totalPages: 0 } });
+  const [data, setData] = useState<ApiResponse<Job[]>>({ 
+    data: [], 
+    pagination: { total: 0, totalPages: 0, page: 1, limit: 10 } 
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchJobs = async (currentParams: any) => {
     try {
       setLoading(true);
       const response = await jobService.getJobs(currentParams);
       setData(response);
-    } catch (err) {
-      setError(err);
+    } catch (err: any) {
+      setError(err instanceof Error ? err : new Error(String(err)));
     } finally {
       setLoading(false);
     }

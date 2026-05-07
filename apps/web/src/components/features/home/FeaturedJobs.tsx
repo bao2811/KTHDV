@@ -49,8 +49,8 @@ export default function FeaturedJobs() {
             >
               <div className="flex justify-between items-start mb-6">
                 <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500 overflow-hidden">
-                  {job.company?.logo ? (
-                    <img src={job.company.logo} alt={job.company.name} className="w-full h-full object-cover" />
+                  {job.company?.logoUrl ? (
+                    <img src={job.company.logoUrl} alt={job.company.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="material-symbols-outlined text-[32px]">business</span>
                   )}
@@ -72,7 +72,7 @@ export default function FeaturedJobs() {
                 <div className="flex items-center gap-4 text-on-surface-variant">
                   <div className="flex items-center gap-1.5 text-xs font-medium">
                     <span className="material-symbols-outlined text-[18px]">location_on</span>
-                    {job.location?.name || "N/A"}
+                    {job.location?.city || "N/A"}
                   </div>
                   <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
                     <span className="material-symbols-outlined text-[18px]">payments</span>

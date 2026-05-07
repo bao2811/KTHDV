@@ -118,7 +118,7 @@ export default function CandidateJobs() {
             </div>
 
             {/* Pagination */}
-            {pagination.totalPages > 1 && (
+            {pagination?.totalPages && pagination.totalPages > 1 && (
               <div className="flex justify-center gap-2 mt-8 mb-4">
                 {Array.from({ length: pagination.totalPages }).map((_, i) => (
                   <button
