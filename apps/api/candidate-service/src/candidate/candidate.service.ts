@@ -63,14 +63,26 @@ export class CandidateService {
         where,
         skip,
         take: limit,
-        include: { user: true, experiences: true, educations: true },
+        include: { 
+          user: {
+            include: { profile: true }
+          }, 
+          experiences: true, 
+          educations: true 
+        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.candidateProfile.count({ where }),
     ]);
 
+    // Map avatarUrl from profile if available
+    const mappedData = data.map(candidate => ({
+      ...candidate,
+      avatarUrl: candidate.user?.profile?.avatarUrl || null,
+    }));
+
     return {
-      data,
+      data: mappedData,
       pagination: {
         page,
         limit,
@@ -83,23 +95,41 @@ export class CandidateService {
   async getProfileByUserId(userId: number) {
     const profile = await this.prisma.candidateProfile.findUnique({
       where: { userId },
-      include: { experiences: true, educations: true, user: true },
+      include: { 
+        experiences: true, 
+        educations: true, 
+        user: {
+          include: { profile: true }
+        } 
+      },
     });
     if (!profile) {
       throw new NotFoundException('Profile không tồn tại');
     }
-    return profile;
+    return {
+      ...profile,
+      avatarUrl: (profile.user as any)?.profile?.avatarUrl || null,
+    };
   }
 
   async getProfileById(id: number) {
     const profile = await this.prisma.candidateProfile.findUnique({
       where: { id },
-      include: { experiences: true, educations: true, user: true },
+      include: { 
+        experiences: true, 
+        educations: true, 
+        user: {
+          include: { profile: true }
+        } 
+      },
     });
     if (!profile) {
       throw new NotFoundException('Profile không tồn tại');
     }
-    return profile;
+    return {
+      ...profile,
+      avatarUrl: (profile.user as any)?.profile?.avatarUrl || null,
+    };
   }
 
   async updateProfile(

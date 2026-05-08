@@ -56,9 +56,10 @@ export class FileUploadProxyController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
+    const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
     const formData = new FormData();
     formData.append('file', file.buffer, {
-      filename: file.originalname,
+      filename: originalname,
       contentType: file.mimetype,
     });
     formData.append('userId', userId.toString());
@@ -83,9 +84,10 @@ export class FileUploadProxyController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
+    const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
     const formData = new FormData();
     formData.append('file', file.buffer, {
-      filename: file.originalname,
+      filename: originalname,
       contentType: file.mimetype,
     });
     formData.append('userId', userId.toString());
@@ -139,5 +141,36 @@ export class FileUploadProxyController {
       getAuthConfig(req),
     );
     return res.json(result);
+  }
+
+  @Get('cv/:id/view')
+  @ApiOperation({ summary: 'Xem CV trực tiếp (Proxy stream qua Backend)' })
+  async viewCV(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const response = await this.proxy.stream(
+        `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/view`,
+        getAuthConfig(req),
+      );
+
+      // Forward headers safely
+      const contentType = response.headers['content-type'] || 'application/pdf';
+      const contentDisp = response.headers['content-disposition'] || 'inline';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', contentDisp);
+
+      // Pipe stream
+      response.data.pipe(res);
+    } catch (error: any) {
+      console.error('Gateway View CV Proxy Error:', error.message);
+      return res.status(error.status || 500).json({ 
+        message: 'Lỗi khi kết nối đến dịch vụ CV',
+        details: error.message 
+      });
+    }
   }
 }

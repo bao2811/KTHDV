@@ -49,7 +49,7 @@ export class ApplicationsService {
     }
 
     // Create application
-    return this.prisma.application.create({
+    const app = await this.prisma.application.create({
       data,
       include: {
         job: true,
@@ -57,6 +57,8 @@ export class ApplicationsService {
         resume: true,
       },
     });
+
+    return this.mapApplication(app);
   }
 
   /**
@@ -86,15 +88,19 @@ export class ApplicationsService {
           },
           resume: true,
           matchResult: true,
-          interviews: true,
+          interviews: {
+            include: { interviewer: { include: { profile: true } } }
+          },
         },
         orderBy: { appliedAt: 'desc' },
       }),
       this.prisma.application.count({ where }),
     ]);
 
+    const mappedData = data.map((app) => this.mapApplication(app));
+
     return {
-      data,
+      data: mappedData,
       pagination: {
         page,
         limit,
@@ -122,13 +128,17 @@ export class ApplicationsService {
         candidate: { include: { profile: true } },
         resume: true,
         matchResult: true,
-        interviews: { include: { interviewer: true } },
+        interviews: { 
+          include: { 
+            interviewer: { include: { profile: true } } 
+          } 
+        },
       },
     });
     if (!app) {
       throw new NotFoundException('Application không tồn tại');
     }
-    return app;
+    return this.mapApplication(app);
   }
 
   /**
@@ -163,6 +173,106 @@ export class ApplicationsService {
       byStatus: Object.fromEntries(
         stats.map((stat) => [stat.status, stat._count]),
       ),
+    };
+  }
+
+  /**
+   * Update application status (HR/Admin)
+   */
+  async updateApplicationStatus(id: number, status: string) {
+    // Check if exists
+    await this.getApplication(id);
+
+    const app = await this.prisma.application.update({
+      where: { id },
+      data: { status: status as any },
+      include: {
+        job: true,
+        candidate: { include: { profile: true } },
+      },
+    });
+
+    return this.mapApplication(app);
+  }
+
+  private mapApplication(app: any) {
+    if (!app) return null;
+    const result = { ...app };
+
+    if (result.candidate) {
+      result.candidate = {
+        ...result.candidate,
+        fullName: result.candidate.profile?.fullName || result.candidate.email,
+        avatarUrl: result.candidate.profile?.avatarUrl || null,
+      };
+    }
+
+    if (result.interviews && Array.isArray(result.interviews)) {
+      result.interviews = result.interviews.map((int: any) => {
+        if (int.interviewer) {
+          return {
+            ...int,
+            interviewer: {
+              ...int.interviewer,
+              fullName: int.interviewer.profile?.fullName || int.interviewer.email,
+              avatarUrl: int.interviewer.profile?.avatarUrl || null,
+            },
+          };
+        }
+        return int;
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Get all applications with filtering (HR/Admin)
+   */
+  async getAllApplications(
+    params: { status?: string; jobId?: number; page?: number; limit?: number } = {},
+  ) {
+    const page = params.page || 1;
+    const limit = params.limit || 50;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (params.status) where.status = params.status;
+    if (params.jobId) where.jobId = params.jobId;
+
+    const [data, total] = await Promise.all([
+      this.prisma.application.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          job: {
+            include: { company: true, location: true },
+          },
+          candidate: { include: { profile: true } },
+          resume: true,
+          matchResult: true,
+          interviews: { 
+            include: { 
+              interviewer: { include: { profile: true } } 
+            } 
+          },
+        },
+        orderBy: { appliedAt: 'desc' },
+      }),
+      this.prisma.application.count({ where }),
+    ]);
+
+    const mappedData = data.map((app) => this.mapApplication(app));
+
+    return {
+      data: mappedData,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 }

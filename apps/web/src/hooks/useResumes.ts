@@ -88,6 +88,17 @@ export const useResumes = () => {
     uploadResume,
     deleteResume,
     setPrimaryResume,
-    downloadResume
+    downloadResume,
+    viewResume: async (id: number | string) => {
+      try {
+        const blob = await fileService.viewCVBlob(id);
+        const url = window.URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        // Optional: Clean up the URL after some time
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+      } catch (err) {
+        console.error('Failed to view CV', err);
+      }
+    }
   };
 };

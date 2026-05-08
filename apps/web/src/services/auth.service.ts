@@ -25,6 +25,11 @@ export const authService = {
     return response.data;
   },
 
+  async updateProfile(data: { fullName?: string; phone?: string; avatarUrl?: string }) {
+    const response = await api.patch("/users/me/profile", data);
+    return response.data;
+  },
+
   getGoogleAuthUrl() {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
     return `${baseUrl}${API_ROUTES.AUTH.GOOGLE}`;
