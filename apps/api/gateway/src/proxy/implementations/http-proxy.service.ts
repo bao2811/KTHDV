@@ -18,8 +18,15 @@ export class HttpProxyService implements IServiceProxy {
 
   async get<T = any>(url: string, config?: any): Promise<T> {
     try {
+      const mergedConfig = {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
       const response = await firstValueFrom(
-        this.httpService.get<T>(url, config),
+        this.httpService.get<T>(url, mergedConfig),
       );
       return response.data;
     } catch (error: any) {
@@ -31,8 +38,15 @@ export class HttpProxyService implements IServiceProxy {
 
   async post<T = any>(url: string, data?: any, config?: any): Promise<T> {
     try {
+      const mergedConfig = {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
       const response = await firstValueFrom(
-        this.httpService.post<T>(url, data, config),
+        this.httpService.post<T>(url, data, mergedConfig),
       );
       return response.data;
     } catch (error: any) {
@@ -44,8 +58,15 @@ export class HttpProxyService implements IServiceProxy {
 
   async patch<T = any>(url: string, data?: any, config?: any): Promise<T> {
     try {
+      const mergedConfig = {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
       const response = await firstValueFrom(
-        this.httpService.patch<T>(url, data, config),
+        this.httpService.patch<T>(url, data, mergedConfig),
       );
       return response.data;
     } catch (error: any) {
@@ -57,8 +78,15 @@ export class HttpProxyService implements IServiceProxy {
 
   async delete<T = any>(url: string, config?: any): Promise<T> {
     try {
+      const mergedConfig = {
+        ...config,
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
       const response = await firstValueFrom(
-        this.httpService.delete<T>(url, config),
+        this.httpService.delete<T>(url, mergedConfig),
       );
       return response.data;
     } catch (error: any) {
