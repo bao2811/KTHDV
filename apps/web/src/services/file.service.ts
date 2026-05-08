@@ -41,5 +41,20 @@ export const fileService = {
   async downloadCV(cvId: number | string) {
     const response = await api.get(`/upload/cv/${cvId}/download`);
     return response.data; // This returns { success: true, url: '...' }
+  },
+
+  async viewCVBlob(cvId: number | string) {
+    const response = await api.get(`/upload/cv/${cvId}/view`, {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  getViewUrl(cvId: number | string) {
+    // Keep this for backward compatibility or direct links if needed, 
+    // but we will prefer the Blob method
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
+    const token = localStorage.getItem("accessToken");
+    return `${baseUrl}/upload/cv/${cvId}/view?token=${token}`;
   }
 };

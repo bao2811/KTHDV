@@ -143,7 +143,7 @@ export class JobService {
   }
 
   // Jobs
-  createJob(data: {
+  async createJob(data: {
     title: string;
     description: string;
     salaryMin?: number;
@@ -157,13 +157,39 @@ export class JobService {
     createdByUserId?: number;
     publishedAt?: string;
     expiredAt?: string;
+    skills?: Array<{ skillId: number; level: 'REQUIRED' | 'NICE_TO_HAVE'; minYears?: number }>;
   }): Promise<Job> {
-    return this.prisma.job.create({
-      data: {
-        ...data,
-        publishedAt: data.publishedAt ? new Date(data.publishedAt) : undefined,
-        expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
-      },
+    const { skills, ...jobData } = data;
+
+    return this.prisma.$transaction(async (tx) => {
+      const job = await tx.job.create({
+        data: {
+          ...jobData,
+          publishedAt: jobData.publishedAt ? new Date(jobData.publishedAt) : undefined,
+          expiredAt: jobData.expiredAt ? new Date(jobData.expiredAt) : undefined,
+        },
+      });
+
+      if (skills && skills.length > 0) {
+        await tx.jobSkill.createMany({
+          data: skills.map(s => ({
+            jobId: job.id,
+            skillId: s.skillId,
+            level: s.level,
+            minYears: s.minYears || 0,
+          })),
+        });
+      }
+
+      return tx.job.findUnique({
+        where: { id: job.id },
+        include: {
+          company: true,
+          location: true,
+          category: true,
+          jobSkills: { include: { skill: true } },
+        },
+      }) as unknown as Job;
     });
   }
 

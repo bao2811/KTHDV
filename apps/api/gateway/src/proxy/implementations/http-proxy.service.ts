@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { IServiceProxy } from '../interfaces/service-proxy.interface';
@@ -30,9 +30,9 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP GET failed: ${error.response?.data?.message || error.message}`,
-      );
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message;
+      throw new HttpException(`HTTP GET failed: ${message}`, status);
     }
   }
 
@@ -50,9 +50,9 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP POST failed: ${error.response?.data?.message || error.message}`,
-      );
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message;
+      throw new HttpException(`HTTP POST failed: ${message}`, status);
     }
   }
 
@@ -70,9 +70,9 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP PATCH failed: ${error.response?.data?.message || error.message}`,
-      );
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message;
+      throw new HttpException(`HTTP PATCH failed: ${message}`, status);
     }
   }
 
@@ -90,9 +90,31 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP DELETE failed: ${error.response?.data?.message || error.message}`,
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message;
+      throw new HttpException(`HTTP DELETE failed: ${message}`, status);
+    }
+  }
+
+  async stream(url: string, config?: any): Promise<any> {
+    try {
+      const mergedConfig = {
+        ...config,
+        responseType: 'stream',
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
+      // For streaming, we need the full response object
+      const response = await firstValueFrom(
+        this.httpService.get(url, mergedConfig),
       );
+      return response;
+    } catch (error: any) {
+      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
+      const message = error.response?.data?.message || error.message;
+      throw new HttpException(`HTTP STREAM failed: ${message}`, status);
     }
   }
 }

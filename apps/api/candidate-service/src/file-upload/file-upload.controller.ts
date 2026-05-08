@@ -7,6 +7,7 @@ import {
   UseInterceptors,
   Res,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
@@ -70,10 +71,6 @@ export class FileUploadController {
     };
   }
 
-  /**
-   * Upload Avatar for user
-   * POST /api/upload/avatar
-   */
   @Post('avatar')
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
@@ -81,18 +78,27 @@ export class FileUploadController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
-    // Upload to MinIO
-    const { fileUrl } = await this.fileUploadService.uploadCV(file, userId);
+    // Upload to MinIO using specific avatar method
+    const { fileUrl } = await this.fileUploadService.uploadAvatar(file, userId);
 
-    // Update Profile table
-    await this.prisma.profile.update({
+    // Get presigned URL for immediate display
+    const displayUrl = await this.fileUploadService.getDownloadUrl(fileUrl);
+
+    // Update or Create Profile table (Upsert)
+    await this.prisma.profile.upsert({
       where: { userId },
-      data: { avatarUrl: fileUrl },
+      update: { avatarUrl: displayUrl }, // We store the display URL or object path? 
+      // Let's store the object path for consistency, but return the display URL
+      create: { 
+        userId, 
+        fullName: 'User',
+        avatarUrl: displayUrl
+      },
     });
 
     return {
       success: true,
-      avatarUrl: fileUrl,
+      avatarUrl: displayUrl,
       message: 'Cập nhật ảnh đại diện thành công',
     };
   }
@@ -218,6 +224,36 @@ export class FileUploadController {
       resume.fileUrl,
     );
     return res.json({ success: true, url: downloadUrl });
+  }
+
+  /**
+   * View CV (Streaming proxy)
+   * GET /api/upload/cv/:id/view
+   */
+  @Get('cv/:id/view')
+  async viewCV(
+    @Param('id') resumeId: string,
+    @CurrentUser('id') userId: number,
+    @Res() res: express.Response,
+  ) {
+    try {
+      const { stream, fileName, contentType } = 
+        await this.fileUploadService.getFileStream(parseInt(resumeId, 10));
+
+      // Set headers for inline display (with UTF-8 support for Vietnamese filenames)
+      const encodedFileName = encodeURIComponent(fileName);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `inline; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`);
+
+      // Pipe MinIO stream to express response
+      stream.pipe(res);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        return res.status(404).json({ message: error.message });
+      }
+      console.error('View CV error:', error);
+      return res.status(500).json({ message: 'Lỗi khi hiển thị CV' });
+    }
   }
 
   /**

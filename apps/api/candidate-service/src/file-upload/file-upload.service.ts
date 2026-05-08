@@ -2,9 +2,11 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
+  NotFoundException,
   OnModuleInit,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import * as Minio from 'minio';
 import 'multer';
 
@@ -23,7 +25,10 @@ export class FileUploadService implements OnModuleInit {
   private minioClient: Minio.Client;
   private minioBucket: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(
+    private configService: ConfigService,
+    private prisma: PrismaService
+  ) {
     const endPoint = this.configService.get('MINIO_ENDPOINT', 'localhost');
     const port = parseInt(this.configService.get('MINIO_PORT', '9000'), 10);
     const accessKey = this.configService.get('MINIO_ACCESS_KEY', 'minioadmin');
@@ -69,38 +74,45 @@ export class FileUploadService implements OnModuleInit {
    *   secretKey: this.minioSecretKey,
    * });
    */
-  async uploadCV(
+  async uploadFile(
     file: any,
     userId: number,
-  ): Promise<{ fileUrl: string; fileName: string; fileType: 'PDF' | 'DOCX' }> {
+    type: 'cv' | 'avatar' = 'cv'
+  ): Promise<{ fileUrl: string; fileName: string; fileType: string }> {
     if (!file) {
       throw new BadRequestException('File không được gửi');
     }
 
     // Validate file type
-    const allowedMimes = [
+    const cvMimes = [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
+    const avatarMimes = ['image/jpeg', 'image/png', 'image/webp'];
+    
+    const allowedMimes = type === 'cv' ? cvMimes : avatarMimes;
+
     if (!allowedMimes.includes(file.mimetype)) {
-      throw new BadRequestException('Chỉ hỗ trợ file PDF hoặc DOCX');
+      throw new BadRequestException(
+        type === 'cv' ? 'Chỉ hỗ trợ file PDF hoặc DOCX' : 'Chỉ hỗ trợ file ảnh (JPG, PNG, WEBP)'
+      );
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (max 10MB for CV, 2MB for avatar)
+    const maxSize = type === 'cv' ? 10 * 1024 * 1024 : 2 * 1024 * 1024;
     if (file.size > maxSize) {
-      throw new BadRequestException('File quá lớn (tối đa 10MB)');
+      throw new BadRequestException(`File quá lớn (tối đa ${type === 'cv' ? '10MB' : '2MB'})`);
     }
 
     try {
       // Extract file extension
       const ext = file.originalname.split('.').pop()?.toLowerCase();
-      const fileType = ext === 'pdf' ? 'PDF' : 'DOCX';
-
+      
       // Generate unique filename
       const timestamp = Date.now();
-      const fileName = `cv-${userId}-${timestamp}.${ext}`;
-      const objectName = `resumes/${fileName}`;
+      const prefix = type === 'cv' ? 'resumes' : 'avatars';
+      const fileName = `${type}-${userId}-${timestamp}.${ext}`;
+      const objectName = `${prefix}/${fileName}`;
 
       // Actual MinIO upload
       await this.minioClient.putObject(
@@ -111,17 +123,30 @@ export class FileUploadService implements OnModuleInit {
         { 'Content-Type': file.mimetype },
       );
 
-      // We store the object name in the DB, not the full URL, 
-      // because we'll generate presigned URLs for viewing
+      const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
       return {
-        fileUrl: objectName, // Store object name as the "URL" reference
-        fileName: file.originalname,
-        fileType,
+        fileUrl: objectName,
+        fileName: originalname,
+        fileType: ext.toUpperCase(),
       };
     } catch (error) {
       console.error('MinIO upload error details:', error);
       throw new InternalServerErrorException(`Lỗi tải file lên hệ thống: ${error.message}`);
     }
+  }
+
+  // Backwards compatibility for other callers
+  async uploadCV(file: any, userId: number) {
+    const res = await this.uploadFile(file, userId, 'cv');
+    return {
+      fileUrl: res.fileUrl,
+      fileName: res.fileName,
+      fileType: (res.fileType === 'PDF' ? 'PDF' : 'DOCX') as any
+    };
+  }
+
+  async uploadAvatar(file: any, userId: number) {
+    return this.uploadFile(file, userId, 'avatar');
   }
 
   /**
@@ -150,8 +175,34 @@ export class FileUploadService implements OnModuleInit {
       console.log(`Deleted file from MinIO: ${objectName}`);
     } catch (error) {
       console.error('MinIO delete error:', error);
-      // We don't necessarily want to crash the whole request if delete fails, 
-      // but we log it.
+    }
+  }
+
+  /**
+   * Get file stream from MinIO
+   */
+  async getFileStream(resumeId: number): Promise<{ stream: any; fileName: string; contentType: string }> {
+    const resume = await this.prisma.resume.findUnique({
+      where: { id: resumeId },
+    });
+
+    if (!resume) {
+      throw new NotFoundException('Không tìm thấy CV');
+    }
+
+    try {
+      console.log(`Attempting to get object from MinIO. Bucket: ${this.minioBucket}, Path: ${resume.fileUrl}`);
+      const stream = await this.minioClient.getObject(this.minioBucket, resume.fileUrl);
+      const contentType = resume.fileType === 'PDF' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      
+      return {
+        stream,
+        fileName: resume.fileName || 'cv.pdf',
+        contentType,
+      };
+    } catch (error) {
+      console.error('MinIO getObject error details:', error);
+      throw new BadRequestException(`MinIO Error: ${error.message}`);
     }
   }
 }

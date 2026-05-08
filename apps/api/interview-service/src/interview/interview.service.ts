@@ -8,7 +8,7 @@ export class InterviewService {
 
   // ===== Availability Slots =====
 
-  createSlot(data: { userId: number; startTime: string; endTime: string }): Promise<AvailabilitySlot> {
+  async createSlot(data: { userId: number; startTime: string; endTime: string }): Promise<AvailabilitySlot> {
     const start = new Date(data.startTime);
     const end = new Date(data.endTime);
 
@@ -64,7 +64,7 @@ export class InterviewService {
 
   // ===== Interviews =====
 
-  createInterview(data: {
+  async createInterview(data: {
     applicationId: number;
     interviewerId: number;
     scheduledAt: string;
@@ -73,7 +73,7 @@ export class InterviewService {
     meetingLink?: string;
     notes?: string;
   }) {
-    return this.prisma.interview.create({
+    const interview = await this.prisma.interview.create({
       data: {
         applicationId: data.applicationId,
         interviewerId: data.interviewerId,
@@ -84,10 +84,44 @@ export class InterviewService {
         notes: data.notes,
       },
       include: {
-        application: true,
-        interviewer: { select: { id: true, email: true } },
+        application: {
+          include: {
+            candidate: { include: { profile: true } },
+            job: { select: { id: true, title: true } },
+          },
+        },
+        interviewer: { include: { profile: true } },
       },
     });
+
+    return this.mapInterview(interview);
+  }
+
+  private mapInterview(interview: any) {
+    if (!interview) return null;
+    
+    // Create a plain object to avoid Prisma read-only issues
+    const result = { ...interview };
+
+    // Map candidate names
+    if (result.application?.candidate) {
+      result.application.candidate = {
+        ...result.application.candidate,
+        fullName: result.application.candidate.profile?.fullName || result.application.candidate.email,
+        avatarUrl: result.application.candidate.profile?.avatarUrl || null,
+      };
+    }
+
+    // Map interviewer names
+    if (result.interviewer) {
+      result.interviewer = {
+        ...result.interviewer,
+        fullName: result.interviewer.profile?.fullName || result.interviewer.email,
+        avatarUrl: result.interviewer.profile?.avatarUrl || null,
+      };
+    }
+
+    return result;
   }
 
   async listInterviews(params: {
@@ -115,18 +149,20 @@ export class InterviewService {
         include: {
           application: {
             include: {
-              candidate: { select: { id: true, email: true } },
+              candidate: { include: { profile: true } },
               job: { select: { id: true, title: true } },
             },
           },
-          interviewer: { select: { id: true, email: true } },
+          interviewer: { include: { profile: true } },
         },
       }),
       this.prisma.interview.count({ where }),
     ]);
 
+    const mappedData = data.map(item => this.mapInterview(item));
+
     return {
-      data,
+      data: mappedData,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
@@ -137,18 +173,18 @@ export class InterviewService {
       include: {
         application: {
           include: {
-            candidate: { select: { id: true, email: true } },
+            candidate: { include: { profile: true } },
             job: { select: { id: true, title: true } },
             resume: true,
           },
         },
-        interviewer: { select: { id: true, email: true } },
+        interviewer: { include: { profile: true } },
       },
     });
     if (!interview) {
       throw new NotFoundException('Interview không tồn tại');
     }
-    return interview;
+    return this.mapInterview(interview);
   }
 
   async updateInterview(
@@ -182,7 +218,6 @@ export class InterviewService {
   }
 
   // ===== Auto-Schedule =====
-  // Finds overlapping free slots between an interviewer and a candidate time range.
 
   async findAvailableSlots(interviewerId: number, startDate: string, endDate: string) {
     const start = new Date(startDate);
@@ -207,7 +242,6 @@ export class InterviewService {
   }) {
     const duration = data.durationMinutes || 60;
 
-    // Find next available (unbooked) slot for the interviewer
     const availableSlot = await this.prisma.availabilitySlot.findFirst({
       where: {
         userId: data.interviewerId,
@@ -223,7 +257,6 @@ export class InterviewService {
       );
     }
 
-    // Book the slot + create interview in a transaction
     const [interview] = await this.prisma.$transaction([
       this.prisma.interview.create({
         data: {
@@ -234,8 +267,13 @@ export class InterviewService {
           interviewType: data.interviewType,
         },
         include: {
-          application: true,
-          interviewer: { select: { id: true, email: true } },
+          application: {
+            include: {
+              candidate: { include: { profile: true } },
+              job: { select: { id: true, title: true } },
+            },
+          },
+          interviewer: { include: { profile: true } },
         },
       }),
       this.prisma.availabilitySlot.update({
@@ -244,6 +282,6 @@ export class InterviewService {
       }),
     ]);
 
-    return interview;
+    return this.mapInterview(interview);
   }
 }

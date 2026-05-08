@@ -109,9 +109,10 @@ export class FileUploadService {
       //   { 'Content-Type': file.mimetype }
       // );
 
+      const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
       return {
         fileUrl,
-        fileName: file.originalname,
+        fileName: originalname,
         fileType,
       };
     } catch (error) {

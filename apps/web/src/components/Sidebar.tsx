@@ -20,9 +20,12 @@ const getNavItems = (role: string): NavItem[] => {
   switch (role) {
     case 'hr':
       return [
-        { label: 'Bảng điều khiển', href: '/hr/dashboard', icon: 'dashboard' },
-        { label: 'Hồ sơ ứng tuyển', href: '/hr/applications', icon: 'description' },
+        { label: 'Tổng quan', href: '/hr', icon: 'dashboard' },
+        { label: 'Tin tuyển dụng', href: '/hr/jobs', icon: 'work' },
+        { label: 'Pipeline', href: '/hr/pipeline', icon: 'view_kanban' },
+        { label: 'Ứng viên', href: '/hr/candidates', icon: 'group' },
         { label: 'Phỏng vấn', href: '/hr/interviews', icon: 'event' },
+        { label: 'Duyệt tin', href: '/hr/jobs/approvals', icon: 'fact_check' },
         { label: 'Cài đặt', href: '/hr/settings', icon: 'settings' },
       ];
     case 'admin':

@@ -202,9 +202,10 @@ export class CandidateProxyController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
+    const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
     const formData = new FormData();
     formData.append('file', file.buffer, {
-      filename: file.originalname,
+      filename: originalname,
       contentType: file.mimetype,
     });
     formData.append('userId', userId.toString());
@@ -267,6 +268,29 @@ export class CandidateProxyController {
     // let it redirect and this proxy will handle it.
     // Wait, the http-proxy-service returns response.data.
     return res.json(result);
+  }
+
+  @Get('resumes/:id/view')
+  @ApiOperation({ summary: 'Xem CV trực tiếp (Proxy stream qua Backend)' })
+  async viewCV(
+    @Request() req: any,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ) {
+    const response = await this.proxy.stream(
+      `${CANDIDATE_SERVICE_URL}/upload/cv/${id}/view`,
+      getAuthConfig(req),
+    );
+
+    // Forward headers safely
+    const contentType = response.headers['content-type'] || 'application/pdf';
+    const contentDisp = response.headers['content-disposition'] || 'inline';
+    
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', contentDisp);
+
+    // Pipe stream
+    response.data.pipe(res);
   }
 
   // Applications

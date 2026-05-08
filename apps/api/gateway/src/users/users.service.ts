@@ -162,4 +162,35 @@ export class UsersService {
       },
     });
   }
+
+  /**
+   * Update user profile (fullName, phone, etc.)
+   */
+  async updateProfile(userId: number, data: { fullName?: string; phone?: string; avatarUrl?: string }) {
+    return this.prisma.profile.upsert({
+      where: { userId },
+      update: data,
+      create: {
+        userId,
+        fullName: data.fullName || 'User',
+        phone: data.phone,
+        avatarUrl: data.avatarUrl,
+      },
+    });
+  }
+
+  /**
+   * Update user avatar only
+   */
+  async updateProfileAvatar(userId: number, avatarUrl: string) {
+    return this.prisma.profile.upsert({
+      where: { userId },
+      update: { avatarUrl },
+      create: {
+        userId,
+        fullName: 'User',
+        avatarUrl,
+      },
+    });
+  }
 }
