@@ -1,8 +1,19 @@
 export interface User {
   id: number;
   email: string;
-  role: string;
+  role: string | { id: number; name: string };
+  fullName?: string;
   avatar?: string;
+  profile?: Profile;
+  candidateProfile?: CandidateProfile;
+}
+
+export interface Profile {
+  id: number;
+  userId: number;
+  fullName: string;
+  phone?: string;
+  avatarUrl?: string;
 }
 
 export interface Company {
@@ -22,6 +33,18 @@ export interface Location {
   address?: string;
 }
 
+export interface JobCategory {
+  id: number;
+  name: string;
+  parentId?: number;
+}
+
+export interface Skill {
+  id: number;
+  name: string;
+  category?: string;
+}
+
 export interface Job {
   id: number;
   title: string;
@@ -29,18 +52,91 @@ export interface Job {
   jobType: string;
   salaryMin?: number;
   salaryMax?: number;
+  experienceYears?: number;
   company?: Company;
   location?: Location;
-  category?: { id: number; name: string };
+  category?: JobCategory;
   jobSkills?: Array<{
     skillId: number;
-    skill: { name: string };
+    level: string;
+    minYears: number;
+    skill: Skill;
   }>;
   createdAt: string;
+  updatedAt?: string;
+  publishedAt?: string;
+  expiredAt?: string;
   status: string;
+  createdByUserId?: number;
   _count?: {
     applications: number;
   };
+}
+
+export interface MatchResult {
+  id: number;
+  applicationId: number;
+  overallScore?: number;
+  passedHardFilter: boolean;
+  matchDetails?: any;
+  processedAt: string;
+}
+
+export interface Interview {
+  id: number;
+  applicationId: number;
+  interviewerId: number;
+  interviewer?: User;
+  scheduledAt: string;
+  durationMinutes: number;
+  interviewType: 'ONLINE' | 'IN_PERSON';
+  meetingLink?: string;
+  status: 'SCHEDULED' | 'COMPLETED' | 'CANCELLED';
+  notes?: string;
+  createdAt: string;
+  application?: Application;
+}
+
+export interface Application {
+  id: number;
+  jobId: number;
+  job?: Job;
+  candidateId: number;
+  candidate?: User;
+  resumeId: number;
+  resume?: Resume;
+  status: 'SUBMITTED' | 'MATCHED' | 'INTERVIEWING' | 'OFFERED' | 'REJECTED';
+  appliedAt: string;
+  updatedAt: string;
+  matchResult?: MatchResult;
+  interviews?: Interview[];
+}
+
+export interface Resume {
+  id: number;
+  userId: number;
+  fileName?: string;
+  fileUrl: string;
+  fileType: string;
+  isPrimary: boolean;
+  uploadedAt: string;
+}
+
+export interface PipelineStage {
+  id: number;
+  name: string;
+  order: number;
+  color: string;
+}
+
+export interface JobApproval {
+  id: number;
+  jobId: number;
+  reviewerId: number;
+  reviewer?: User;
+  status: 'APPROVED' | 'REJECTED';
+  comment?: string;
+  reviewedAt: string;
 }
 
 export interface Experience {
@@ -57,6 +153,8 @@ export interface Education {
   schoolName: string;
   degree: string;
   major: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CandidateProfile {
@@ -66,6 +164,8 @@ export interface CandidateProfile {
   avatarUrl?: string;
   summary?: string;
   phone?: string;
+  dateOfBirth?: string;
+  address?: string;
   experiences: Experience[];
   educations: Education[];
   user: User;

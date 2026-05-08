@@ -12,7 +12,7 @@ export default function CVManager() {
     uploadResume, 
     deleteResume, 
     setPrimaryResume, 
-    downloadResume 
+    viewResume 
   } = useResumes();
 
   return (
@@ -64,7 +64,7 @@ export default function CVManager() {
                   cv={cv}
                   onDelete={deleteResume}
                   onSetPrimary={setPrimaryResume}
-                  onDownload={downloadResume}
+                  onDownload={viewResume}
                 />
               ))
             ) : (

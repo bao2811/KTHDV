@@ -13,4 +13,5 @@ export interface IServiceProxy {
   post<T = any>(url: string, data?: any, config?: any): Promise<T>;
   patch<T = any>(url: string, data?: any, config?: any): Promise<T>;
   delete<T = any>(url: string, config?: any): Promise<T>;
+  stream(url: string, config?: any): Promise<any>;
 }

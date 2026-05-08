@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,5 +83,17 @@ export class UsersController {
     @Body('roleId', ParseIntPipe) roleId: number,
   ) {
     return this.usersService.updateRole(id, roleId);
+  }
+
+  /**
+   * PATCH /api/users/me/profile
+   * Cập nhật profile của chính mình
+   */
+  @Patch('me/profile')
+  async updateMyProfile(
+    @CurrentUser('id') userId: number,
+    @Body() body: { fullName?: string; phone?: string; avatarUrl?: string },
+  ) {
+    return this.usersService.updateProfile(userId, body);
   }
 }

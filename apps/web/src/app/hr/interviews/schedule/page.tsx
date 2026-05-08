@@ -1,12 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { jobService } from '@/services/job.service';
+import { applicationService } from '@/services/application.service';
+import { interviewService } from '@/services/interview.service';
+import { Job, Application } from '@/types';
 
-export default function ScheduleInterview() {
+function ScheduleForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const preSelectedAppId = searchParams?.get('appId');
+
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
+  
   const [formData, setFormData] = useState({
     jobId: '',
-    candidateId: '',
+    applicationId: '',
     date: '',
     time: '',
     duration: '60',
@@ -15,83 +29,160 @@ export default function ScheduleInterview() {
     note: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [jobRes, appRes] = await Promise.all([
+          jobService.getJobs({ status: 'ACTIVE' }),
+          applicationService.getAllApplications({ status: 'INTERVIEWING', limit: 100 }),
+        ]);
+        
+        const activeJobs = Array.isArray(jobRes) ? jobRes : (jobRes as any).data || [];
+        setJobs(activeJobs);
+        
+        const interviewingApps = Array.isArray(appRes) ? appRes : (appRes as any).data || [];
+        setApplications(interviewingApps);
+
+        if (preSelectedAppId) {
+          const selectedApp = interviewingApps.find((a: Application) => a.id === parseInt(preSelectedAppId));
+          if (selectedApp) {
+            setFormData(prev => ({
+              ...prev,
+              applicationId: preSelectedAppId,
+              jobId: selectedApp.jobId.toString()
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch lookup data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [preSelectedAppId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Đã xếp lịch phỏng vấn!');
-    // Redirect logic would go here
+    if (!formData.date || !formData.time || !formData.applicationId) return;
+
+    try {
+      setSubmitting(true);
+      const scheduledAt = new Date(`${formData.date}T${formData.time}`).toISOString();
+      
+      await interviewService.scheduleInterview({
+        applicationId: parseInt(formData.applicationId),
+        scheduledAt,
+        durationMinutes: parseInt(formData.duration),
+        interviewType: formData.type,
+        meetingLink: formData.link || undefined,
+        notes: formData.note || undefined,
+      });
+
+      alert('Đã xếp lịch phỏng vấn thành công!');
+      router.push('/hr/interviews');
+    } catch (err: any) {
+      alert('Xếp lịch thất bại: ' + (err.message || 'Lỗi không xác định'));
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto py-20 flex justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const selectedApp = applications.find(a => a.id === parseInt(formData.applicationId));
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center space-x-4">
-        <Link href="/hr/interviews" className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500">
+      <div className="flex items-center space-x-4 mb-2">
+        <Link href="/hr/interviews" className="p-2 hover:bg-surface-container rounded-lg transition-colors text-on-surface-variant">
           <span className="material-symbols-outlined text-[24px]">arrow_back</span>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Xếp Lịch Phỏng Vấn</h1>
-          <p className="text-slate-500 mt-1">Lên lịch gặp ứng viên cho vòng phỏng vấn</p>
+          <h1 className="text-2xl font-bold text-on-surface">Xếp Lịch Phỏng Vấn</h1>
+          <p className="text-on-surface-variant mt-1">Lên lịch gặp ứng viên cho vòng phỏng vấn</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 md:p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-ambient border border-outline-variant/30 p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Job & Application Selects */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Vị trí tuyển dụng <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Vị trí tuyển dụng <span className="text-error">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
                 value={formData.jobId}
-                onChange={e => setFormData({...formData, jobId: e.target.value})}
+                onChange={e => {
+                  const val = e.target.value;
+                  setFormData(prev => ({ ...prev, jobId: val, applicationId: '' }));
+                }}
                 required
               >
                 <option value="">Chọn vị trí...</option>
-                <option value="1">Lập trình viên Frontend Cao cấp</option>
-                <option value="2">Kỹ sư Backend (Java)</option>
+                {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
               </select>
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Ứng viên <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Ứng viên <span className="text-error">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                value={formData.candidateId}
-                onChange={e => setFormData({...formData, candidateId: e.target.value})}
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
+                value={formData.applicationId}
+                onChange={e => setFormData(prev => ({ ...prev, applicationId: e.target.value }))}
                 required
+                disabled={!formData.jobId}
               >
                 <option value="">Chọn ứng viên...</option>
-                <option value="c1">Nguyễn Văn A</option>
-                <option value="c2">Trần Thị B</option>
+                {applications
+                  .filter(app => !formData.jobId || app.jobId === parseInt(formData.jobId))
+                  .map(app => (
+                    <option key={app.id} value={app.id}>
+                      {app.candidate?.fullName || app.candidate?.email}
+                    </option>
+                  ))}
               </select>
+              {!formData.jobId && <p className="text-[10px] text-on-surface-variant">Vui lòng chọn vị trí trước</p>}
             </div>
 
+            {/* Date & Time */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Ngày phỏng vấn <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Ngày phỏng vấn <span className="text-error">*</span></label>
               <input 
                 type="date" 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
                 value={formData.date}
-                onChange={e => setFormData({...formData, date: e.target.value})}
+                onChange={e => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 required
+                min={new Date().toISOString().split('T')[0]}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Giờ bắt đầu <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Giờ bắt đầu <span className="text-error">*</span></label>
               <input 
                 type="time" 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
                 value={formData.time}
-                onChange={e => setFormData({...formData, time: e.target.value})}
+                onChange={e => setFormData(prev => ({ ...prev, time: e.target.value }))}
                 required
               />
             </div>
 
+            {/* Duration & Type */}
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Thời lượng (phút) <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Thời lượng (phút) <span className="text-error">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
                 value={formData.duration}
-                onChange={e => setFormData({...formData, duration: e.target.value})}
+                onChange={e => setFormData(prev => ({ ...prev, duration: e.target.value }))}
                 required
               >
                 <option value="30">30 phút</option>
@@ -103,11 +194,11 @@ export default function ScheduleInterview() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Hình thức <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-bold text-on-surface">Hình thức <span className="text-error">*</span></label>
               <select 
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
                 value={formData.type}
-                onChange={e => setFormData({...formData, type: e.target.value})}
+                onChange={e => setFormData(prev => ({ ...prev, type: e.target.value }))}
                 required
               >
                 <option value="ONLINE">Trực tuyến (Online)</option>
@@ -116,57 +207,56 @@ export default function ScheduleInterview() {
             </div>
           </div>
 
-          {formData.type === 'ONLINE' ? (
-            <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Link cuộc họp (Google Meet/Zoom)</label>
-              <input 
-                type="url" 
-                placeholder="https://meet.google.com/..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                value={formData.link}
-                onChange={e => setFormData({...formData, link: e.target.value})}
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="block text-sm font-bold text-slate-700">Địa điểm phỏng vấn</label>
-              <input 
-                type="text" 
-                placeholder="Phòng họp A, Tầng 3, Tòa nhà X..."
-                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                value={formData.link}
-                onChange={e => setFormData({...formData, link: e.target.value})}
-              />
-            </div>
-          )}
+          <div className="space-y-2">
+            <label className="block text-sm font-bold text-on-surface">
+              {formData.type === 'ONLINE' ? 'Link cuộc họp (Google Meet/Zoom)' : 'Địa điểm phỏng vấn'}
+            </label>
+            <input 
+              type={formData.type === 'ONLINE' ? 'url' : 'text'} 
+              placeholder={formData.type === 'ONLINE' ? 'https://meet.google.com/...' : 'Phòng họp A, Tầng 3...'}
+              className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-sm"
+              value={formData.link}
+              onChange={e => setFormData(prev => ({ ...prev, link: e.target.value }))}
+            />
+          </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-slate-700">Ghi chú cho ứng viên</label>
+            <label className="block text-sm font-bold text-on-surface">Ghi chú cho ứng viên</label>
             <textarea 
               rows={4}
               placeholder="Chuẩn bị CV bản cứng, đến sớm 10 phút..."
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none"
+              className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all resize-none font-body-sm"
               value={formData.note}
-              onChange={e => setFormData({...formData, note: e.target.value})}
+              onChange={e => setFormData(prev => ({ ...prev, note: e.target.value }))}
             ></textarea>
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+          <div className="pt-6 border-t border-outline-variant/30 flex justify-end gap-4">
             <Link 
               href="/hr/interviews"
-              className="px-6 py-2.5 text-slate-600 font-bold bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              className="px-8 py-3 text-on-surface font-bold bg-surface-container border border-outline-variant rounded-xl hover:bg-surface-variant transition-all active:scale-95"
             >
               Hủy
             </Link>
             <button 
               type="submit"
-              className="px-6 py-2.5 text-white font-bold bg-primary hover:bg-indigo-700 rounded-lg transition-colors shadow-sm"
+              disabled={submitting}
+              className="px-8 py-3 text-on-primary font-bold bg-primary hover:bg-primary/90 rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-2 disabled:opacity-50"
             >
+              {submitting && <span className="material-symbols-outlined animate-spin text-[18px]">refresh</span>}
               Lưu & Gửi Email
             </button>
           </div>
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ScheduleInterview() {
+  return (
+    <Suspense fallback={<div className="py-20 flex justify-center"><span className="animate-spin text-primary">refresh</span></div>}>
+      <ScheduleForm />
+    </Suspense>
   );
 }

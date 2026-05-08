@@ -8,6 +8,7 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  Patch,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ApplicationsService } from './applications.service';
@@ -81,5 +82,36 @@ export class ApplicationsController {
   @Delete(':id')
   async cancelApplication(@Param('id', ParseIntPipe) id: number) {
     return this.applicationsService.cancelApplication(id);
+  }
+
+  /**
+   * Update application status (HR/Admin only)
+   * PATCH /api/applications/:id/status
+   */
+  @Patch(':id/status')
+  async updateApplicationStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: string },
+  ) {
+    return this.applicationsService.updateApplicationStatus(id, body.status);
+  }
+
+  /**
+   * Get all applications (HR/Admin only)
+   * GET /api/applications
+   */
+  @Get()
+  async getAllApplications(
+    @Query('status') status?: string,
+    @Query('jobId') jobId?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.applicationsService.getAllApplications({
+      status,
+      jobId: jobId ? parseInt(jobId, 10) : undefined,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 }

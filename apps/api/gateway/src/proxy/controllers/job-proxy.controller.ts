@@ -232,9 +232,15 @@ export class JobProxyController {
   // Job Postings
   @Post('postings')
   async createJob(@Request() req: any, @Body() body: any) {
+    // Inject current user ID as creator
+    const payload = {
+      ...body,
+      createdByUserId: req.user.id,
+    };
+    
     return this.proxy.post(
       `${JOB_SERVICE_URL}/jobs/jobs`,
-      body,
+      payload,
       getAuthConfig(req),
     );
   }
