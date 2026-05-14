@@ -5,6 +5,8 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useJobs } from '@/hooks/useJobs';
 import { Job } from '@/types';
+import { jobService } from '@/services/job.service';
+import { userService } from '@/services/user.service';
 
 import { useAuth } from '@/context/AuthContext';
 
@@ -20,10 +22,50 @@ export default function JobManagement() {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const { jobs, loading, error } = useJobs({
+  const { jobs, loading, refresh } = useJobs({
     status: activeFilter === 'ALL' ? undefined : activeFilter,
     search: searchQuery || undefined,
   });
+
+  const handleRequestApproval = async (jobId: string | number) => {
+    if (!confirm('Bạn có chắc chắn muốn gửi yêu cầu duyệt cho công việc này?')) return;
+    try {
+      const reviewers = await userService.getReviewers();
+      if (reviewers.length === 0) {
+        alert('Không tìm thấy người duyệt nào (Admin/Manager)');
+        return;
+      }
+      
+      // For now, automatically pick the first reviewer
+      const reviewerId = reviewers[0].id;
+      
+      await jobService.requestApproval(jobId, reviewerId);
+      refresh();
+      alert('Đã gửi yêu cầu duyệt thành công!');
+    } catch (err) {
+      alert('Gửi yêu cầu duyệt thất bại');
+    }
+  };
+
+  const handleCloseJob = async (jobId: string | number) => {
+    if (!confirm('Bạn có chắc chắn muốn đóng công việc này?')) return;
+    try {
+      await jobService.closeJob(jobId);
+      refresh();
+    } catch (err) {
+      alert('Đóng công việc thất bại');
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string | number) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa công việc này? Vị trí này sẽ không thể khôi phục.')) return;
+    try {
+      await jobService.deleteJob(jobId);
+      refresh();
+    } catch (err) {
+      alert('Xóa công việc thất bại');
+    }
+  };
 
   const getInitials = (name: string) => {
     return name?.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) || 'US';
@@ -74,10 +116,10 @@ export default function JobManagement() {
               </div>
               <h1 className="font-headline-xl text-headline-xl text-on-surface font-bold">Danh sách Công việc</h1>
             </div>
-            <button className="px-6 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2">
+            <Link href="/hr/jobs/create" className="px-6 py-3 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:shadow-lg hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2">
               <span className="material-symbols-outlined">add</span>
               Tạo vị trí mới
-            </button>
+            </Link>
           </div>
 
           {/* Filter Tabs */}
@@ -116,10 +158,13 @@ export default function JobManagement() {
                         <h3 className="font-headline-lg text-headline-lg font-bold text-on-surface group-hover:text-primary transition-colors">{job.title}</h3>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                           job.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 
-                          job.status === 'DRAFT' ? 'bg-surface-container-highest text-on-surface-variant' : 
+                          job.status === 'DRAFT' ? 'bg-amber-100 text-amber-700' : 
+                          job.status === 'PENDING' ? 'bg-blue-100 text-blue-700' : 
                           'bg-red-100 text-red-700'
                         }`}>
-                          {job.status === 'ACTIVE' ? 'Hoạt động' : job.status === 'DRAFT' ? 'Bản nháp' : 'Đã đóng'}
+                          {job.status === 'ACTIVE' ? 'Hoạt động' : 
+                           job.status === 'DRAFT' ? 'Bản nháp' : 
+                           job.status === 'PENDING' ? 'Chờ duyệt' : 'Đã đóng'}
                         </span>
                       </div>
                       <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -140,9 +185,31 @@ export default function JobManagement() {
                         href={`/hr/jobs/${job.id}/applicants`}
                         className="px-5 py-2.5 bg-surface-container-highest text-on-surface-variant font-label-bold text-label-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all"
                       >
-                        Quản lý ứng viên
+                        Ứng viên
                       </Link>
-                      <button className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-error/10 hover:text-error transition-all">
+                      
+                      {job.status === 'DRAFT' && (
+                        <button 
+                          onClick={() => handleRequestApproval(job.id)}
+                          className="px-5 py-2.5 bg-primary/10 text-primary font-label-bold text-label-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all"
+                        >
+                          Gửi duyệt
+                        </button>
+                      )}
+
+                      {job.status === 'ACTIVE' && (
+                        <button 
+                          onClick={() => handleCloseJob(job.id)}
+                          className="px-5 py-2.5 bg-error/10 text-error font-label-bold text-label-bold rounded-lg hover:bg-error hover:text-on-error transition-all"
+                        >
+                          Đóng
+                        </button>
+                      )}
+
+                      <button 
+                        onClick={() => handleDeleteJob(job.id)}
+                        className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-error/10 hover:text-error transition-all"
+                      >
                         <span className="material-symbols-outlined">delete</span>
                       </button>
                     </div>

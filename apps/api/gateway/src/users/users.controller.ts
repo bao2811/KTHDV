@@ -21,6 +21,16 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   /**
+   * GET /api/users/reviewers
+   * Danh sách người có quyền duyệt tin (Admin, HR)
+   */
+  @Get('reviewers')
+  @Roles('Admin', 'HR')
+  async findReviewers() {
+    return this.usersService.findReviewers();
+  }
+
+  /**
    * GET /api/users
    * Danh sách users (Admin only)
    */

@@ -1,7 +1,13 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  HR = 'HR',
+  CANDIDATE = 'CANDIDATE',
+}
+
 export interface User {
   id: number;
   email: string;
-  role: string;
+  role: string | { name: string };
   avatar?: string;
 }
 
