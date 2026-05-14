@@ -12,6 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const FILTER_TABS = [
   { id: 'ALL', label: 'Tất cả' },
+  { id: 'PENDING', label: 'Chờ duyệt' },
   { id: 'ACTIVE', label: 'Đang hoạt động' },
   { id: 'PENDING', label: 'Chờ duyệt' },
   { id: 'DRAFT', label: 'Bản nháp' },

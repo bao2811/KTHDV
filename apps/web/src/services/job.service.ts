@@ -43,8 +43,18 @@ export const jobService = {
     return response.data;
   },
 
+  async createCompany(data: any): Promise<any> {
+    const response = await api.post(API_ROUTES.JOBS.COMPANIES, data);
+    return response.data;
+  },
+
   async getCategories(): Promise<any[]> {
     const response = await api.get(API_ROUTES.JOBS.CATEGORIES);
+    return response.data;
+  },
+
+  async createCategory(data: any): Promise<any> {
+    const response = await api.post(API_ROUTES.JOBS.CATEGORIES, data);
     return response.data;
   },
 
@@ -53,8 +63,18 @@ export const jobService = {
     return response.data;
   },
 
+  async createLocation(data: any): Promise<any> {
+    const response = await api.post(API_ROUTES.JOBS.LOCATIONS, data);
+    return response.data;
+  },
+
   async getSkills(): Promise<any[]> {
     const response = await api.get(API_ROUTES.JOBS.SKILLS);
+    return response.data;
+  },
+
+  async createSkill(data: any): Promise<any> {
+    const response = await api.post(API_ROUTES.JOBS.SKILLS, data);
     return response.data;
   },
 

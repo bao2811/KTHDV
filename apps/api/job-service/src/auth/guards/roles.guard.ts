@@ -26,18 +26,19 @@ export class RolesGuard implements CanActivate {
 
     // In a microservice behind a gateway, the user object might be directly on the request
     // from the JWT guard or passed as a header (but here we assume JWT guard populated it)
-    if (!user || !user.role) {
-      throw new ForbiddenException('Không có quyền truy cập');
+    if (!user) {
+      throw new ForbiddenException('Không tìm thấy thông tin người dùng trong request');
+    }
+    if (!user.role) {
+      throw new ForbiddenException(`Thông tin role bị thiếu trong token. User: ${JSON.stringify(user)}`);
     }
 
-    // Role might be an object { id: number, name: string } or just a string
-    const userRoleName = typeof user.role === 'string' ? user.role : user.role.name;
-
+    const userRoleName = typeof user.role === 'string' ? user.role : user.role?.name;
     const hasRole = requiredRoles.includes(userRoleName);
 
     if (!hasRole) {
       throw new ForbiddenException(
-        `Yêu cầu role: ${requiredRoles.join(', ')}. Role hiện tại: ${userRoleName}`,
+        `Quyền truy cập bị từ chối. Role yêu cầu: [${requiredRoles.join(', ')}]. Role của bạn: "${userRoleName}". Payload: ${JSON.stringify(user)}`,
       );
     }
 

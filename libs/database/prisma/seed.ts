@@ -110,6 +110,70 @@ async function main() {
     });
   }
 
+  // Companies
+  const companies = [
+    { name: "FPT Software", industry: "Technology", size: "10000+", website: "https://fpt-software.com" },
+    { name: "VNG Corporation", industry: "Internet", size: "2000-5000", website: "https://vng.com.vn" },
+    { name: "Viettel Group", industry: "Telecommunications", size: "50000+", website: "https://viettel.com.vn" },
+  ];
+
+  for (const c of companies) {
+    const existing = await prisma.company.findFirst({ where: { name: c.name } });
+    if (!existing) {
+      await prisma.company.create({ data: c });
+    }
+  }
+
+  // Locations
+  const locations = [
+    { city: "Hanoi", district: "Cau Giay", address: "Duy Tan Street" },
+    { city: "HCMC", district: "District 1", address: "Le Loi Street" },
+    { city: "Da Nang", district: "Hai Chau", address: "Bach Dang Street" },
+  ];
+
+  for (const l of locations) {
+    const existing = await prisma.location.findFirst({ 
+      where: { city: l.city, district: l.district } 
+    });
+    if (!existing) {
+      await prisma.location.create({ data: l });
+    }
+  }
+
+  // Categories
+  const categories = [
+    "Software Development",
+    "Data Science",
+    "Product Management",
+    "Design",
+    "Marketing",
+    "Sales",
+  ];
+
+  for (const name of categories) {
+    const existing = await prisma.jobCategory.findFirst({ where: { name } });
+    if (!existing) {
+      await prisma.jobCategory.create({ data: { name } });
+    }
+  }
+
+  // Skills
+  const skills = [
+    { name: "Node.js", category: "Backend" },
+    { name: "React", category: "Frontend" },
+    { name: "TypeScript", category: "Language" },
+    { name: "PostgreSQL", category: "Database" },
+    { name: "Docker", category: "DevOps" },
+  ];
+
+  for (const s of skills) {
+    await prisma.skill.upsert({
+      where: { name: s.name },
+      update: { category: s.category },
+      create: s,
+    });
+  }
+
   console.log("Seed done.");
   console.log("Admin: admin@recruitment.com / Admin@123");
   console.log("HR: hr@recruitment.com / HR@123");

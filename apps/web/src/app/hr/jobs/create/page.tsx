@@ -18,6 +18,17 @@ export default function CreateJobPage() {
   const [locations, setLocations] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [availableSkills, setAvailableSkills] = useState<any[]>([]);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSkillModal, setShowSkillModal] = useState(false);
+  
+  const [newCompany, setNewCompany] = useState({ name: '', website: '', description: '' });
+  const [newLocation, setNewLocation] = useState({ city: '', country: 'Vietnam', address: '' });
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [newSkill, setNewSkill] = useState({ name: '', category: '' });
+  const [activeSkillIndex, setActiveSkillIndex] = useState<number | null>(null);
+  const [isCreatingMetadata, setIsCreatingMetadata] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -118,7 +129,7 @@ export default function CreateJobPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(prev => prev + 1);
       return;
     }
@@ -136,6 +147,7 @@ export default function CreateJobPage() {
         salaryMin: formData.minSalary ? parseInt(formData.minSalary) : null,
         salaryMax: formData.maxSalary ? parseInt(formData.maxSalary) : null,
         experienceYears: 0, // Default for now
+        status: 'PENDING' // HR initiates request, so it should be pending approval
       };
 
       const job = await jobService.createJob(payload);
@@ -155,11 +167,13 @@ export default function CreateJobPage() {
 
       await Promise.all([...skillPromises, ...filterPromises]);
 
-      alert('Đã tạo tin tuyển dụng thành công!');
+      // Automatically request approval from an admin/manager if needed
+      // For now, just notifying success
+      alert('Đã khởi tạo đơn yêu cầu tuyển dụng thành công! Đơn đang chờ phê duyệt.');
       router.push('/hr/jobs');
     } catch (error) {
       console.error('Failed to create job:', error);
-      alert('Có lỗi xảy ra khi tạo tin tuyển dụng.');
+      alert('Có lỗi xảy ra khi khởi tạo đơn yêu cầu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -170,213 +184,323 @@ export default function CreateJobPage() {
     setSkillSearch('');
   };
 
-  const removeSkill = (skillId: number) => {
-    setSelectedSkills(selectedSkills.filter(s => s.skillId !== skillId));
+  const getCompanyName = (id: string) => companies.find(c => c.id.toString() === id)?.name || 'Chưa chọn';
+  const getLocationName = (id: string) => {
+    const loc = locations.find(l => l.id.toString() === id);
+    return loc ? `${loc.city}, ${loc.country}` : 'Chưa chọn';
   };
+  const getCategoryName = (id: string) => categories.find(c => c.id.toString() === id)?.name || 'Chưa chọn';
+  const getSkillName = (id: string) => availableSkills.find(s => s.id.toString() === id)?.name || 'Chưa chọn';
 
-  const updateSkill = (skillId: number, field: string, value: any) => {
-    setSelectedSkills(selectedSkills.map(s => s.skillId === skillId ? { ...s, [field]: value } : s));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreateCompany = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (currentStep < 2) {
-      setCurrentStep(prev => prev + 1);
-      return;
-    }
-
-    setIsSubmitting(true);
     try {
-      const payload: any = {
-        title: formData.title,
-        description: formData.description,
-        jobType: formData.jobType,
-        experienceYears: parseInt(formData.experienceYears) || 0,
-        status: 'PENDING',
-        skills: selectedSkills.map(s => ({
-          skillId: s.skillId,
-          level: s.level,
-          minYears: s.minYears,
-        })),
-      };
-      if (formData.companyId) payload.companyId = parseInt(formData.companyId);
-      if (formData.locationId) payload.locationId = parseInt(formData.locationId);
-      if (formData.categoryId) payload.categoryId = parseInt(formData.categoryId);
-      if (formData.salaryMin) payload.salaryMin = parseFloat(formData.salaryMin);
-      if (formData.salaryMax) payload.salaryMax = parseFloat(formData.salaryMax);
+      setIsCreatingMetadata(true);
+      // Clean data before sending
+      const dataToSend: any = { name: newCompany.name };
+      if (newCompany.website?.trim()) dataToSend.website = newCompany.website.trim();
+      if (newCompany.description?.trim()) dataToSend.description = newCompany.description.trim();
 
-      await jobService.createJob(payload);
-      router.push('/hr/jobs?created=true');
-    } catch (err: any) {
-      alert('Tạo tin thất bại: ' + (err.message || 'Lỗi không xác định'));
+      const company = await jobService.createCompany(dataToSend);
+      setCompanies(prev => [...prev, company]);
+      setFormData(prev => ({ ...prev, companyId: company.id.toString() }));
+      setShowCompanyModal(false);
+      setNewCompany({ name: '', website: '', description: '' });
+    } catch (error) {
+      console.error('Failed to create company:', error);
+      alert('Không thể tạo công ty mới. Vui lòng kiểm tra lại thông tin.');
     } finally {
-      setIsSubmitting(false);
+      setIsCreatingMetadata(false);
     }
   };
 
-  if (loadingData) {
-    return (
-      <div className="min-h-[40vh] flex flex-col items-center justify-center gap-3">
-        <div className="w-8 h-8 border-3 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-        <p className="text-on-surface-variant text-label-medium animate-pulse">Đang chuẩn bị biểu mẫu...</p>
-      </div>
-    );
-  }
+  const handleCreateLocation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsCreatingMetadata(true);
+      // Map UI fields to backend schema (city, district, address)
+      const dataToSend: any = { 
+        city: newLocation.city,
+        district: (newLocation as any).country, // Using 'country' field from state as 'district'
+        address: newLocation.address 
+      };
+      
+      const location = await jobService.createLocation(dataToSend);
+      setLocations(prev => [...prev, location]);
+      setFormData(prev => ({ ...prev, locationId: location.id.toString() }));
+      setShowLocationModal(false);
+      setNewLocation({ city: '', country: '', address: '' });
+    } catch (error) {
+      console.error('Failed to create location:', error);
+      alert('Không thể tạo địa điểm mới.');
+    } finally {
+      setIsCreatingMetadata(false);
+    }
+  };
+
+  const handleCreateCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsCreatingMetadata(true);
+      const category = await jobService.createCategory({ name: newCategory.name });
+      setCategories(prev => [...prev, category]);
+      setFormData(prev => ({ ...prev, categoryId: category.id.toString() }));
+      setShowCategoryModal(false);
+      setNewCategory({ name: '', description: '' });
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      alert('Không thể tạo danh mục mới.');
+    } finally {
+      setIsCreatingMetadata(false);
+    }
+  };
+
+  const handleCreateSkill = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsCreatingMetadata(true);
+      const skill = await jobService.createSkill({ name: newSkill.name });
+      
+      // Update skills list
+      setAvailableSkills(prev => [...prev, skill]);
+      
+      // Select the newly created skill for the active slot
+      if (activeSkillIndex !== null) {
+        handleSkillChange(activeSkillIndex, 'skillId', skill.id.toString());
+      }
+      
+      setShowSkillModal(false);
+      setActiveSkillIndex(null);
+      setNewSkill({ name: '', category: '' });
+    } catch (error) {
+      console.error('Failed to create skill:', error);
+      alert('Không thể tạo kỹ năng mới.');
+    } finally {
+      setIsCreatingMetadata(false);
+    }
+  };
 
   return (
     <ProtectedRoute allowedRoles={[UserRole.ADMIN, UserRole.HR]}>
-      <div className="max-w-4xl mx-auto flex flex-col gap-stack-gap-lg pb-10">
-        <div className="flex items-center gap-stack-gap-sm font-body-sm text-body-sm text-on-surface-variant mb-stack-gap-md">
-          <Link href="/hr/jobs" className="hover:text-primary transition-colors">Quản lý tin tuyển dụng</Link>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-          <span className="text-on-surface font-semibold">Tạo tin mới</span>
-        </div>
-
-        <div>
-          <h1 className="font-headline-xl text-headline-xl text-on-surface">Tạo tin tuyển dụng mới</h1>
-          <p className="font-body-md text-body-md text-on-surface-variant mt-1">Điền thông tin chi tiết để đăng tin tìm kiếm ứng viên.</p>
+      <div className="max-w-5xl mx-auto flex flex-col gap-stack-gap-lg pb-20">
+        {/* Header Section */}
+        <div className="flex flex-col gap-stack-gap-sm mb-4">
+          <div className="flex items-center gap-stack-gap-sm font-body-sm text-body-sm text-on-surface-variant">
+            <Link href="/hr/jobs" className="hover:text-primary transition-colors">Quản lý tin</Link>
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+            <span className="text-on-surface font-semibold">Khởi tạo đơn yêu cầu</span>
+          </div>
+          <div className="flex justify-between items-end mt-4">
+            <div>
+              <h1 className="font-headline-xl text-headline-xl text-on-surface tracking-tight">Khởi tạo Đơn yêu cầu Tuyển dụng</h1>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">
+                Cung cấp đầy đủ thông tin vị trí công việc. Đơn của bạn sẽ được gửi đến bộ phận quản lý để phê duyệt trước khi đăng tải chính thức.
+              </p>
+            </div>
+            <div className="hidden md:flex flex-col items-end text-right">
+              <span className="text-label-bold font-label-bold text-primary bg-primary-container/20 px-3 py-1 rounded-full border border-primary/10">HR Initiation Flow</span>
+              <span className="text-body-sm text-on-surface-variant mt-2 italic">Lưu ý: Bạn có thể chọn dữ liệu có sẵn hoặc thêm mới nếu thiếu.</span>
+            </div>
+          </div>
         </div>
 
         {/* Form Steps Indicator */}
-        <div className="flex items-center justify-between mb-8 relative">
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-surface-variant z-0"></div>
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-primary z-0 transition-all duration-300" style={{ width: currentStep === 1 ? '0%' : currentStep === 2 ? '50%' : '100%' }}></div>
+        <div className="flex items-center justify-between mb-8 px-10 relative">
+          <div className="absolute left-10 right-10 top-5 h-0.5 bg-surface-variant z-0"></div>
+          <div className="absolute left-10 top-5 h-0.5 bg-primary z-0 transition-all duration-500 ease-out" 
+               style={{ width: `calc(${(currentStep - 1) * 33.33}%)` }}></div>
           
-          <div className={`relative z-10 flex flex-col items-center ${currentStep >= 1 ? 'text-primary' : 'text-outline-variant'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-label-bold text-label-bold mb-2 transition-colors ${currentStep >= 1 ? 'bg-primary text-on-primary ring-4 ring-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
-              1
+          {[
+            { step: 1, label: 'Thông tin cơ bản', icon: 'description' },
+            { step: 2, label: 'Kỹ năng', icon: 'psychology' },
+            { step: 3, label: 'Bộ lọc cứng', icon: 'filter_alt' },
+            { step: 4, label: 'Kiểm tra & Gửi', icon: 'fact_check' }
+          ].map((item) => (
+            <div key={item.step} className="relative z-10 flex flex-col items-center group cursor-pointer" onClick={() => item.step < currentStep && setCurrentStep(item.step)}>
+              <div className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 ${
+                currentStep >= item.step 
+                  ? 'bg-primary text-on-primary ring-4 ring-primary-container/30 shadow-lg' 
+                  : 'bg-surface-container-highest text-on-surface-variant border border-outline-variant'
+              }`}>
+                <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+              </div>
+              <span className={`mt-3 font-label-bold text-label-bold transition-colors ${currentStep >= item.step ? 'text-primary' : 'text-on-surface-variant opacity-60'}`}>
+                {item.label}
+              </span>
             </div>
-            <span className="font-label-bold text-label-bold bg-background px-2">Thông tin cơ bản</span>
-          </div>
-          
-          <div className={`relative z-10 flex flex-col items-center ${currentStep >= 2 ? 'text-primary' : 'text-outline-variant'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-label-bold text-label-bold mb-2 transition-colors ${currentStep >= 2 ? 'bg-primary text-on-primary ring-4 ring-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
-              2
-            </div>
-            <span className="font-label-bold text-label-bold bg-background px-2">Yêu cầu kỹ năng</span>
-          </div>
-          
-          <div className={`relative z-10 flex flex-col items-center ${currentStep >= 3 ? 'text-primary' : 'text-outline-variant'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-label-bold text-label-bold mb-2 transition-colors ${currentStep >= 3 ? 'bg-primary text-on-primary ring-4 ring-primary-container' : 'bg-surface-variant text-on-surface-variant'}`}>
-              3
-            </div>
-            <span className="font-label-bold text-label-bold bg-background px-2">Bộ lọc cứng</span>
-          </div>
+          ))}
         </div>
 
-        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-surface-variant overflow-hidden">
+        <div className="bg-surface-container-lowest rounded-2xl shadow-ambient-card border border-surface-variant overflow-hidden">
           {isLoadingMetadata ? (
-            <div className="p-20 flex flex-col items-center justify-center space-y-4">
-              <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
-              <p className="font-body-md text-on-surface-variant">Đang tải dữ liệu cấu hình...</p>
+            <div className="p-24 flex flex-col items-center justify-center space-y-6">
+              <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin"></div>
+              <div className="text-center">
+                <p className="font-headline-lg text-headline-lg text-on-surface">Đang thiết lập biểu mẫu</p>
+                <p className="font-body-md text-on-surface-variant">Vui lòng đợi trong giây lát khi chúng tôi tải dữ liệu hệ thống...</p>
+              </div>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               
               {/* STEP 1: Basic Info */}
               {currentStep === 1 && (
-                <div className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                  <div className="flex flex-col gap-stack-gap-md">
+                <div className="p-10 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="grid grid-cols-1 gap-8">
                     <div className="flex flex-col gap-stack-gap-sm">
-                      <label className="font-label-bold text-label-bold text-on-surface">Tiêu đề công việc <span className="text-error">*</span></label>
+                      <label className="font-label-bold text-label-bold text-on-surface flex items-center">
+                        Tiêu đề công việc <span className="text-error ml-1">*</span>
+                      </label>
                       <input 
                         type="text" 
                         name="title"
                         value={formData.title}
                         onChange={handleInputChange}
-                        placeholder="VD: Lập trình viên React Cao cấp" 
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all" 
+                        placeholder="VD: Senior Product Designer" 
+                        className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all text-on-surface placeholder:text-outline" 
                         required 
                       />
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-grid-gutter">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Công ty <span className="text-error">*</span></label>
-                        <select 
-                          name="companyId"
-                          value={formData.companyId}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                        >
-                          {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <label className="font-label-bold text-label-bold text-on-surface flex items-center">
+                          Công ty <span className="text-error ml-1">*</span>
+                          <span className="material-symbols-outlined text-[16px] ml-2 text-primary/60 cursor-help" title="Bạn chỉ được chọn các công ty đã đăng ký trong hệ thống">info</span>
+                        </label>
+                        <div className="relative group">
+                          <select 
+                            name="companyId"
+                            value={formData.companyId}
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowCompanyModal(true);
+                              } else {
+                                handleInputChange(e);
+                              }
+                            }}
+                            className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none text-on-surface"
+                            required
+                          >
+                            <option value="" disabled>-- Chọn công ty --</option>
+                            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            <option value="ADD_NEW" className="text-primary font-bold">+ Thêm công ty mới</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+                        </div>
+                        {companies.length === 0 && (
+                          <p className="text-[11px] text-error mt-1 font-medium">Lưu ý: Không tìm thấy công ty nào. Vui lòng liên hệ Admin để tạo mới.</p>
+                        )}
                       </div>
+
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Địa điểm <span className="text-error">*</span></label>
-                        <select 
-                          name="locationId"
-                          value={formData.locationId}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                        >
-                          {locations.map(l => <option key={l.id} value={l.id}>{l.city}, {l.country}</option>)}
-                        </select>
+                        <label className="font-label-bold text-label-bold text-on-surface flex items-center">
+                          Địa điểm <span className="text-error ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <select 
+                            name="locationId"
+                            value={formData.locationId}
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowLocationModal(true);
+                              } else {
+                                handleInputChange(e);
+                              }
+                            }}
+                            className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none text-on-surface"
+                            required
+                          >
+                            <option value="" disabled>-- Chọn địa điểm --</option>
+                            {locations.map(l => <option key={l.id} value={l.id}>{l.city}, {l.country}</option>)}
+                            <option value="ADD_NEW" className="text-primary font-bold">+ Thêm địa điểm mới</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-grid-gutter">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Danh mục <span className="text-error">*</span></label>
-                        <select 
-                          name="categoryId"
-                          value={formData.categoryId}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                        >
-                          {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <label className="font-label-bold text-label-bold text-on-surface flex items-center">
+                          Danh mục <span className="text-error ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <select 
+                            name="categoryId"
+                            value={formData.categoryId}
+                            onChange={(e) => {
+                              if (e.target.value === 'ADD_NEW') {
+                                setShowCategoryModal(true);
+                              } else {
+                                handleInputChange(e);
+                              }
+                            }}
+                            className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none text-on-surface"
+                            required
+                          >
+                            <option value="" disabled>-- Chọn danh mục --</option>
+                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            <option value="ADD_NEW" className="text-primary font-bold">+ Thêm danh mục mới</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+                        </div>
                       </div>
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Loại hình <span className="text-error">*</span></label>
-                        <select 
-                          name="jobType"
-                          value={formData.jobType}
-                          onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                        >
-                          <option value="FULL_TIME">TOÀN THỜI GIAN</option>
-                          <option value="PART_TIME">BÁN THỜI GIAN</option>
-                          <option value="REMOTE">TỪ XA</option>
-                          <option value="CONTRACT">HỢP ĐỒNG</option>
-                        </select>
+                        <label className="font-label-bold text-label-bold text-on-surface flex items-center">
+                          Loại hình công việc <span className="text-error ml-1">*</span>
+                        </label>
+                        <div className="relative">
+                          <select 
+                            name="jobType"
+                            value={formData.jobType}
+                            onChange={handleInputChange}
+                            className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none text-on-surface"
+                          >
+                            <option value="FULL_TIME">Toàn thời gian</option>
+                            <option value="PART_TIME">Bán thời gian</option>
+                            <option value="REMOTE">Làm việc từ xa</option>
+                            <option value="CONTRACT">Hợp đồng</option>
+                          </select>
+                          <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-grid-gutter">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 bg-primary-container/10 rounded-2xl border border-primary/10">
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Lương tối thiểu (VND)</label>
+                        <label className="font-label-bold text-label-bold text-primary">Lương tối thiểu (VND)</label>
                         <input 
                           type="number" 
                           name="minSalary"
                           value={formData.minSalary}
                           onChange={handleInputChange}
-                          placeholder="20000000" 
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all" 
+                          placeholder="20,000,000" 
+                          className="w-full px-5 py-4 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all text-on-surface" 
                         />
                       </div>
                       <div className="flex flex-col gap-stack-gap-sm">
-                        <label className="font-label-bold text-label-bold text-on-surface">Lương tối đa (VND)</label>
+                        <label className="font-label-bold text-label-bold text-primary">Lương tối đa (VND)</label>
                         <input 
                           type="number" 
                           name="maxSalary"
                           value={formData.maxSalary}
                           onChange={handleInputChange}
-                          placeholder="45000000" 
-                          className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all" 
+                          placeholder="45,000,000" 
+                          className="w-full px-5 py-4 bg-surface-container-lowest border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all text-on-surface" 
                         />
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-stack-gap-sm">
-                      <label className="font-label-bold text-label-bold text-on-surface">Mô tả công việc <span className="text-error">*</span></label>
+                      <label className="font-label-bold text-label-bold text-on-surface">Mô tả công việc <span className="text-error ml-1">*</span></label>
                       <textarea 
-                        rows={6} 
+                        rows={8} 
                         name="description"
                         value={formData.description}
                         onChange={handleInputChange}
-                        placeholder="Nhập mô tả chi tiết công việc..." 
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all resize-y" 
+                        placeholder="Mô tả chi tiết về vị trí, trách nhiệm và môi trường làm việc..." 
+                        className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all text-on-surface resize-none" 
                         required
                       ></textarea>
                     </div>
@@ -384,12 +508,12 @@ export default function CreateJobPage() {
                     <div className="flex flex-col gap-stack-gap-sm">
                       <label className="font-label-bold text-label-bold text-on-surface">Yêu cầu ứng viên</label>
                       <textarea 
-                        rows={4} 
+                        rows={5} 
                         name="requirements"
                         value={formData.requirements}
                         onChange={handleInputChange}
-                        placeholder="Nhập các yêu cầu công việc..." 
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-lg font-body-md focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all resize-y"
+                        placeholder="Kỹ năng mềm, thái độ, hoặc các yêu cầu đặc thù khác..." 
+                        className="w-full px-5 py-4 bg-surface-container-low border border-outline-variant rounded-xl font-body-md focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all text-on-surface resize-none"
                       ></textarea>
                     </div>
                   </div>
@@ -398,120 +522,155 @@ export default function CreateJobPage() {
 
               {/* STEP 2: Skills */}
               {currentStep === 2 && (
-                <div className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="p-10 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-headline-lg text-headline-lg text-on-surface">Kỹ năng yêu cầu</h3>
+                    <div>
+                      <h3 className="font-headline-lg text-headline-lg text-on-surface">Kỹ năng chuyên môn</h3>
+                      <p className="text-body-sm text-on-surface-variant mt-1">Lựa chọn các kỹ năng cần thiết cho vị trí này từ thư viện hệ thống.</p>
+                    </div>
                     <button 
                       type="button" 
                       onClick={addSkill}
-                      className="flex items-center space-x-1 font-label-bold text-label-bold text-primary hover:bg-primary-container/50 px-3 py-1.5 rounded-lg transition-colors"
+                      className="flex items-center gap-2 font-label-bold text-label-bold text-primary bg-primary-container/20 hover:bg-primary-container/40 px-5 py-3 rounded-xl transition-all active:scale-95"
                     >
-                      <span className="material-symbols-outlined text-[18px]">add</span>
+                      <span className="material-symbols-outlined text-[20px]">add_circle</span>
                       Thêm kỹ năng
                     </button>
                   </div>
 
-                  <div className="flex flex-col gap-stack-gap-md">
+                  <div className="grid grid-cols-1 gap-4">
                     {formData.jobSkills.map((skill, index) => (
-                      <div key={index} className="flex items-center space-x-4 bg-surface-container-low p-4 rounded-xl border border-surface-variant">
-                        <div className="flex-1">
-                          <select 
-                            value={skill.skillId}
-                            onChange={(e) => handleSkillChange(index, 'skillId', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                          >
-                            <option value="">Chọn kỹ năng</option>
-                            {availableSkills.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                          </select>
+                      <div key={index} className="flex flex-wrap md:flex-nowrap items-center gap-4 bg-surface-container-low p-5 rounded-2xl border border-surface-variant hover:border-primary/30 transition-colors group">
+                        <div className="flex-1 min-w-[200px]">
+                          <div className="relative">
+                            <select 
+                              value={skill.skillId}
+                              onChange={(e) => {
+                                if (e.target.value === 'ADD_NEW') {
+                                  setActiveSkillIndex(index);
+                                  setShowSkillModal(true);
+                                } else {
+                                  handleSkillChange(index, 'skillId', e.target.value);
+                                }
+                              }}
+                              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none"
+                              required
+                            >
+                              <option value="">-- Chọn kỹ năng --</option>
+                              {availableSkills.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                              <option value="ADD_NEW" className="text-primary font-bold">+ Thêm kỹ năng mới</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">expand_more</span>
+                          </div>
                         </div>
-                        <div className="w-40">
-                          <select 
-                            value={skill.level}
-                            onChange={(e) => handleSkillChange(index, 'level', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                          >
-                            <option value="REQUIRED">Bắt buộc</option>
-                            <option value="NICE_TO_HAVE">Ưu tiên</option>
-                          </select>
+                        <div className="w-full md:w-48">
+                          <div className="relative">
+                            <select 
+                              value={skill.level}
+                              onChange={(e) => handleSkillChange(index, 'level', e.target.value)}
+                              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none"
+                            >
+                              <option value="REQUIRED">Bắt buộc</option>
+                              <option value="NICE_TO_HAVE">Ưu tiên</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">expand_more</span>
+                          </div>
                         </div>
-                        <div className="w-32">
+                        <div className="w-full md:w-40 flex items-center bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-3">
                           <input 
                             type="number" 
                             placeholder="Số năm" 
                             value={skill.minYears}
                             onChange={(e) => handleSkillChange(index, 'minYears', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all" 
+                            className="w-full bg-transparent focus:outline-none text-center" 
+                            min="0"
                           />
+                          <span className="text-label-bold text-on-surface-variant ml-2 whitespace-nowrap">năm KN</span>
                         </div>
                         <button 
                           type="button" 
                           onClick={() => removeSkill(index)}
-                          className="p-2 text-outline-variant hover:text-error hover:bg-error-container/50 rounded-lg transition-colors"
+                          className="p-3 text-outline hover:text-error hover:bg-error-container/50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                         >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                          <span className="material-symbols-outlined text-[22px]">delete</span>
                         </button>
                       </div>
                     ))}
+                    {formData.jobSkills.length === 0 && (
+                      <div className="p-12 text-center border-2 border-dashed border-outline-variant rounded-2xl bg-surface-container-low">
+                        <span className="material-symbols-outlined text-outline text-4xl mb-3">psychology_alt</span>
+                        <p className="text-on-surface-variant">Chưa có kỹ năng nào được thêm. Hãy nhấn "Thêm kỹ năng" để bắt đầu.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {/* STEP 3: Hard Filters */}
               {currentStep === 3 && (
-                <div className="p-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+                <div className="p-10 space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-headline-lg text-headline-lg text-on-surface">Bộ lọc cứng</h3>
+                    <div>
+                      <h3 className="font-headline-lg text-headline-lg text-on-surface">Bộ lọc cứng (Auto-Screener)</h3>
+                      <p className="text-body-sm text-on-surface-variant mt-1">Các tiêu chí bắt buộc. Hệ thống sẽ tự động loại ứng viên không đạt.</p>
+                    </div>
                     <button 
                       type="button" 
                       onClick={addFilter}
-                      className="flex items-center space-x-1 font-label-bold text-label-bold text-primary hover:bg-primary-container/50 px-3 py-1.5 rounded-lg transition-colors"
+                      className="flex items-center gap-2 font-label-bold text-label-bold text-primary bg-primary-container/20 hover:bg-primary-container/40 px-5 py-3 rounded-xl transition-all active:scale-95"
                     >
-                      <span className="material-symbols-outlined text-[18px]">add</span>
+                      <span className="material-symbols-outlined text-[20px]">add_moderator</span>
                       Thêm bộ lọc
                     </button>
                   </div>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant">Ứng viên không thỏa mãn các bộ lọc này sẽ tự động bị loại khi hệ thống chạy so khớp.</p>
 
-                  <div className="space-y-3 mt-4">
+                  <div className="space-y-4">
                     {formData.hardFilters.map((filter, index) => (
-                      <div key={index} className="flex items-center space-x-4 bg-surface-container-low p-4 rounded-xl border border-surface-variant">
-                        <div className="flex-1">
-                          <select 
-                            value={filter.filterType}
-                            onChange={(e) => handleFilterChange(index, 'filterType', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                          >
-                            <option value="EXPERIENCE">Năm kinh nghiệm tối thiểu</option>
-                            <option value="EDUCATION">Bằng cấp bắt buộc</option>
-                            <option value="SKILL">Kỹ năng bắt buộc</option>
-                          </select>
+                      <div key={index} className="flex flex-wrap md:flex-nowrap items-center gap-4 bg-surface-container-low p-5 rounded-2xl border border-surface-variant hover:border-error/20 transition-colors group">
+                        <div className="flex-1 min-w-[200px]">
+                          <div className="relative">
+                            <select 
+                              value={filter.filterType}
+                              onChange={(e) => handleFilterChange(index, 'filterType', e.target.value)}
+                              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none"
+                            >
+                              <option value="EXPERIENCE">Năm kinh nghiệm tối thiểu</option>
+                              <option value="EDUCATION">Bằng cấp tối thiểu</option>
+                              <option value="SKILL">Kỹ năng bắt buộc</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[20px]">expand_more</span>
+                          </div>
                         </div>
-                        <div className="w-32">
-                          <select 
-                            value={filter.operator}
-                            onChange={(e) => handleFilterChange(index, 'operator', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all"
-                          >
-                            <option value="GTE">{'>='}</option>
-                            <option value="EQ">{'=='}</option>
-                            <option value="IN">{'Trong số'}</option>
-                          </select>
+                        <div className="w-full md:w-32">
+                          <div className="relative">
+                            <select 
+                              value={filter.operator}
+                              onChange={(e) => handleFilterChange(index, 'operator', e.target.value)}
+                              className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all appearance-none text-center"
+                            >
+                              <option value="GTE">&ge;</option>
+                              <option value="EQ">=</option>
+                              <option value="IN">Trong số</option>
+                            </select>
+                            <span className="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-outline text-[18px]">unfold_more</span>
+                          </div>
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-[1.5] min-w-[150px]">
                           <input 
                             type="text" 
-                            placeholder="Giá trị" 
+                            placeholder="Giá trị yêu cầu (VD: 3, Bachelor...)" 
                             value={filter.requiredValue}
                             onChange={(e) => handleFilterChange(index, 'requiredValue', e.target.value)}
-                            className="w-full px-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary-container transition-all" 
+                            className="w-full px-5 py-3 bg-surface-container-lowest border border-outline-variant rounded-xl focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-container/20 transition-all" 
+                            required
                           />
                         </div>
                         <button 
                           type="button" 
                           onClick={() => removeFilter(index)}
-                          className="p-2 text-outline-variant hover:text-error hover:bg-error-container/50 rounded-lg transition-colors"
+                          className="p-3 text-outline hover:text-error hover:bg-error-container/50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                         >
-                          <span className="material-symbols-outlined text-[20px]">delete</span>
+                          <span className="material-symbols-outlined text-[22px]">close</span>
                         </button>
                       </div>
                     ))}
@@ -519,47 +678,139 @@ export default function CreateJobPage() {
                 </div>
               )}
 
-              {/* Form Actions */}
-              <div className="px-8 py-5 border-t border-surface-variant bg-surface-container-low flex justify-between items-center">
-                <div>
-                  {currentStep > 1 ? (
+              {/* STEP 4: Review */}
+              {currentStep === 4 && (
+                <div className="p-10 space-y-10 animate-in fade-in zoom-in-95 duration-500">
+                  <div className="text-center space-y-2">
+                    <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
+                      <span className="material-symbols-outlined text-[32px]">verified</span>
+                    </div>
+                    <h3 className="font-headline-lg text-headline-lg text-on-surface">Kiểm tra thông tin lần cuối</h3>
+                    <p className="text-body-md text-on-surface-variant">Vui lòng rà soát lại thông tin trước khi gửi yêu cầu phê duyệt.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-6 bg-surface-container-low p-8 rounded-2xl border border-surface-variant">
+                      <h4 className="font-label-bold text-label-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Thông tin công việc</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <p className="text-[11px] text-outline-variant font-bold uppercase">Tiêu đề</p>
+                          <p className="text-body-md font-semibold text-on-surface">{formData.title}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] text-outline-variant font-bold uppercase">Công ty</p>
+                          <p className="text-body-md text-on-surface">{getCompanyName(formData.companyId)}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] text-outline-variant font-bold uppercase">Địa điểm</p>
+                          <p className="text-body-md text-on-surface">{getLocationName(formData.locationId)}</p>
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[11px] text-outline-variant font-bold uppercase">Lương</p>
+                          <p className="text-body-md text-primary font-bold">
+                            {formData.minSalary && formData.maxSalary 
+                              ? `${parseInt(formData.minSalary).toLocaleString()} - ${parseInt(formData.maxSalary).toLocaleString()} VND`
+                              : 'Thỏa thuận'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-[11px] text-outline-variant font-bold uppercase">Mô tả tóm tắt</p>
+                        <p className="text-body-sm text-on-surface line-clamp-3 bg-surface-container-lowest p-3 rounded-lg border border-outline-variant/50 italic">
+                          "{formData.description}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="bg-surface-container-low p-8 rounded-2xl border border-surface-variant">
+                        <h4 className="font-label-bold text-label-bold text-primary uppercase tracking-widest border-b border-primary/10 pb-2">Yêu cầu chuyên môn</h4>
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {formData.jobSkills.map((s, idx) => (
+                            <span key={idx} className="bg-surface-container-lowest border border-primary/20 text-on-surface px-4 py-2 rounded-full text-body-sm shadow-sm flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-primary mr-2"></span>
+                              {getSkillName(s.skillId)} ({s.minYears}n)
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="bg-surface-container-low p-8 rounded-2xl border border-surface-variant">
+                        <h4 className="font-label-bold text-label-bold text-error uppercase tracking-widest border-b border-error/10 pb-2">Điều kiện loại (Hard Filters)</h4>
+                        <div className="space-y-2 mt-4">
+                          {formData.hardFilters.map((f, idx) => (
+                            <div key={idx} className="flex items-center text-body-sm text-on-surface">
+                              <span className="material-symbols-outlined text-[18px] text-error mr-2">block</span>
+                              {f.filterType}: {f.operator} <strong>{f.requiredValue}</strong>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-6 bg-secondary-container/10 border border-secondary/20 rounded-2xl flex items-start gap-4">
+                    <span className="material-symbols-outlined text-secondary text-[24px] mt-1">notification_important</span>
+                    <div>
+                      <p className="text-body-sm font-semibold text-secondary">Quy trình phê duyệt</p>
+                      <p className="text-[13px] text-on-surface-variant">
+                        Sau khi nhấn "Gửi yêu cầu", tin tuyển dụng của bạn sẽ được chuyển đến trạng thái <strong>CHỜ DUYỆT</strong>. 
+                        Quản lý sẽ rà soát và phản hồi trong vòng 24h làm việc.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Form Actions Footer */}
+              <div className="px-10 py-8 border-t border-surface-variant bg-surface-container-low flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  {currentStep > 1 && (
                     <button 
                       type="button" 
                       onClick={() => setCurrentStep(prev => prev - 1)}
-                      className="px-6 py-2.5 bg-surface-container-lowest border border-outline-variant text-on-surface font-label-bold text-label-bold rounded-lg hover:bg-surface-variant transition-colors shadow-sm"
+                      className="group px-7 py-3.5 bg-surface-container-lowest border border-outline-variant text-on-surface font-label-bold text-label-bold rounded-xl hover:bg-surface-variant transition-all shadow-sm flex items-center active:scale-95"
                     >
+                      <span className="material-symbols-outlined text-[20px] mr-2 group-hover:-translate-x-1 transition-transform">arrow_back</span>
                       Quay lại
                     </button>
-                  ) : (
+                  )}
+                  {currentStep === 1 && (
                     <button 
                       type="button" 
                       onClick={handleSaveDraft}
-                      className="px-6 py-2.5 bg-surface-container-lowest border border-outline-variant text-on-surface font-label-bold text-label-bold rounded-lg hover:bg-surface-variant transition-colors shadow-sm"
+                      className="px-7 py-3.5 bg-surface-container-lowest border border-outline-variant text-on-surface font-label-bold text-label-bold rounded-xl hover:bg-surface-variant transition-all shadow-sm active:scale-95"
                     >
-                      Lưu nháp
+                      Lưu bản nháp
                     </button>
                   )}
                 </div>
                 
-                <div className="flex space-x-3">
-                  {currentStep < 3 ? (
+                <div className="flex space-x-4">
+                  <button 
+                    type="button" 
+                    onClick={() => router.push('/hr/jobs')}
+                    className="px-6 py-3.5 text-on-surface-variant font-label-bold text-label-bold rounded-xl hover:bg-surface-variant transition-colors"
+                  >
+                    Hủy bỏ
+                  </button>
+                  {currentStep < 4 ? (
                     <button 
                       type="submit" 
-                      className="px-6 py-2.5 bg-primary text-on-primary font-label-bold text-label-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center"
+                      className="px-10 py-3.5 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:bg-primary/90 hover:shadow-lg transition-all shadow-md flex items-center active:scale-95"
                     >
                       Tiếp theo
-                      <span className="material-symbols-outlined text-[18px] ml-1">arrow_forward</span>
+                      <span className="material-symbols-outlined text-[20px] ml-2 animate-pulse">arrow_forward</span>
                     </button>
                   ) : (
                     <button 
                       type="submit" 
                       disabled={isSubmitting}
-                      className="px-6 py-2.5 bg-primary text-on-primary font-label-bold text-label-bold rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center disabled:opacity-50"
+                      className="px-12 py-3.5 bg-primary text-on-primary font-label-bold text-label-bold rounded-xl hover:bg-primary/90 hover:shadow-lg transition-all shadow-md flex items-center disabled:opacity-50 active:scale-95"
                     >
                       {isSubmitting ? (
-                        <><span className="material-symbols-outlined animate-spin text-[18px] mr-2">refresh</span> Đang xử lý...</>
+                        <><span className="material-symbols-outlined animate-spin text-[20px] mr-2">progress_activity</span> Đang gửi yêu cầu...</>
                       ) : (
-                        <><span className="material-symbols-outlined text-[18px] mr-2">send</span> Đăng tin</>
+                        <><span className="material-symbols-outlined text-[20px] mr-2">send</span> Gửi yêu cầu phê duyệt</>
                       )}
                     </button>
                   )}
@@ -567,6 +818,205 @@ export default function CreateJobPage() {
               </div>
             </form>
           )}
+        </div>
+        
+        {/* MODALS */}
+        {showCompanyModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl border border-surface-variant overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+                <h3 className="font-headline-sm text-headline-sm text-on-surface">Thêm công ty mới</h3>
+                <button onClick={() => setShowCompanyModal(false)} className="text-on-surface-variant hover:text-error transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleCreateCompany} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Tên công ty *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newCompany.name}
+                    onChange={e => setNewCompany({...newCompany, name: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Google Vietnam"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Website</label>
+                  <input 
+                    type="url" 
+                    value={newCompany.website}
+                    onChange={e => setNewCompany({...newCompany, website: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Mô tả ngắn</label>
+                  <textarea 
+                    value={newCompany.description}
+                    onChange={e => setNewCompany({...newCompany, description: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary resize-none"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => setShowCompanyModal(false)} className="flex-1 py-3 border border-outline text-on-surface font-label-bold rounded-xl hover:bg-surface-variant transition-all">Hủy</button>
+                  <button type="submit" disabled={isCreatingMetadata} className="flex-1 py-3 bg-primary text-on-primary font-label-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                    {isCreatingMetadata ? 'Đang tạo...' : 'Xác nhận'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {showLocationModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl border border-surface-variant overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+                <h3 className="font-headline-sm text-headline-sm text-on-surface">Thêm địa điểm mới</h3>
+                <button onClick={() => setShowLocationModal(false)} className="text-on-surface-variant hover:text-error transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleCreateLocation} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Thành phố *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newLocation.city}
+                    onChange={e => setNewLocation({...newLocation, city: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Hà Nội"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Quận/Huyện</label>
+                  <input 
+                    type="text" 
+                    value={newLocation.country}
+                    onChange={e => setNewLocation({...newLocation, country: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Cầu Giấy"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Địa chỉ chi tiết</label>
+                  <input 
+                    type="text" 
+                    value={newLocation.address}
+                    onChange={e => setNewLocation({...newLocation, address: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: 123 Duy Tân, Cầu Giấy"
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => setShowLocationModal(false)} className="flex-1 py-3 border border-outline text-on-surface font-label-bold rounded-xl hover:bg-surface-variant transition-all">Hủy</button>
+                  <button type="submit" disabled={isCreatingMetadata} className="flex-1 py-3 bg-primary text-on-primary font-label-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                    {isCreatingMetadata ? 'Đang tạo...' : 'Xác nhận'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {showCategoryModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl border border-surface-variant overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+                <h3 className="font-headline-sm text-headline-sm text-on-surface">Thêm danh mục mới</h3>
+                <button onClick={() => setShowCategoryModal(false)} className="text-on-surface-variant hover:text-error transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleCreateCategory} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Tên danh mục *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newCategory.name}
+                    onChange={e => setNewCategory({...newCategory, name: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Software Engineering"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Mô tả</label>
+                  <textarea 
+                    value={newCategory.description}
+                    onChange={e => setNewCategory({...newCategory, description: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary resize-none"
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => setShowCategoryModal(false)} className="flex-1 py-3 border border-outline text-on-surface font-label-bold rounded-xl hover:bg-surface-variant transition-all">Hủy</button>
+                  <button type="submit" disabled={isCreatingMetadata} className="flex-1 py-3 bg-primary text-on-primary font-label-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                    {isCreatingMetadata ? 'Đang tạo...' : 'Xác nhận'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {showSkillModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-surface-container-lowest rounded-2xl w-full max-w-md shadow-2xl border border-surface-variant overflow-hidden animate-in zoom-in-95 duration-300">
+              <div className="p-6 border-b border-surface-variant flex justify-between items-center bg-surface-container-low">
+                <h3 className="font-headline-sm text-headline-sm text-on-surface">Thêm kỹ năng mới</h3>
+                <button onClick={() => { setShowSkillModal(false); setActiveSkillIndex(null); }} className="text-on-surface-variant hover:text-error transition-colors">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+              <form onSubmit={handleCreateSkill} className="p-6 space-y-4">
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Tên kỹ năng *</label>
+                  <input 
+                    type="text" 
+                    required 
+                    value={newSkill.name}
+                    onChange={e => setNewSkill({...newSkill, name: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Next.js, Figma..."
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-label-medium font-label-medium text-on-surface-variant">Lĩnh vực</label>
+                  <input 
+                    type="text" 
+                    value={newSkill.category}
+                    onChange={e => setNewSkill({...newSkill, category: e.target.value})}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
+                    placeholder="VD: Development, Design..."
+                  />
+                </div>
+                <div className="flex gap-3 pt-4">
+                  <button type="button" onClick={() => setShowSkillModal(false)} className="flex-1 py-3 border border-outline text-on-surface font-label-bold rounded-xl hover:bg-surface-variant transition-all">Hủy</button>
+                  <button type="submit" disabled={isCreatingMetadata} className="flex-1 py-3 bg-primary text-on-primary font-label-bold rounded-xl hover:bg-primary/90 transition-all disabled:opacity-50">
+                    {isCreatingMetadata ? 'Đang tạo...' : 'Xác nhận'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Helper Footer */}
+        <div className="flex justify-center gap-10 mt-6 text-on-surface-variant/40">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">lock</span>
+            <span className="text-[12px] font-medium">Bảo mật dữ liệu nội bộ</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">verified_user</span>
+            <span className="text-[12px] font-medium">Hệ thống tuân thủ ISO 27001</span>
+          </div>
         </div>
       </div>
     </ProtectedRoute>
