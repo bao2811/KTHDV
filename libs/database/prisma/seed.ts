@@ -12,6 +12,18 @@ async function main() {
     create: { name: "Admin", description: "Admin role" },
   });
 
+  const hrRole = await prisma.role.upsert({
+    where: { name: "HR" },
+    update: {},
+    create: { name: "HR", description: "HR role" },
+  });
+
+  const managerRole = await prisma.role.upsert({
+    where: { name: "Manager" },
+    update: {},
+    create: { name: "Manager", description: "Manager role" },
+  });
+
   const candidateRole = await prisma.role.upsert({
     where: { name: "Candidate" },
     update: {},
@@ -39,6 +51,27 @@ async function main() {
     },
   });
 
+  const hrPassword = await bcrypt.hash("HR@123", 12);
+  const hrUser = await prisma.user.upsert({
+    where: { email: "hr@recruitment.com" },
+    update: {},
+    create: {
+      email: "hr@recruitment.com",
+      password: hrPassword,
+      roleId: hrRole.id,
+      provider: "local",
+    },
+  });
+
+  await prisma.profile.upsert({
+    where: { userId: hrUser.id },
+    update: {},
+    create: {
+      userId: hrUser.id,
+      fullName: "HR Manager",
+    },
+  });
+
   const candidatePassword = await bcrypt.hash("Candidate@123", 12);
   const candidateUser = await prisma.user.upsert({
     where: { email: "candidate@recruitment.com" },
@@ -60,14 +93,26 @@ async function main() {
     },
   });
 
-  await prisma.pipelineStage.upsert({
-    where: { name: "Submitted" },
-    update: { order: 1, color: "#3B82F6" },
-    create: { name: "Submitted", order: 1, color: "#3B82F6" },
-  });
+  // Pipeline Stages
+  const stages = [
+    { name: "Submitted", order: 1, color: "#3B82F6" },
+    { name: "Screening", order: 2, color: "#9333EA" },
+    { name: "Matched", order: 3, color: "#10B981" },
+    { name: "Interviewing", order: 4, color: "#F59E0B" },
+    { name: "Offered", order: 5, color: "#8B5CF6" },
+  ];
+
+  for (const stage of stages) {
+    await prisma.pipelineStage.upsert({
+      where: { name: stage.name },
+      update: { order: stage.order, color: stage.color },
+      create: stage,
+    });
+  }
 
   console.log("Seed done.");
   console.log("Admin: admin@recruitment.com / Admin@123");
+  console.log("HR: hr@recruitment.com / HR@123");
   console.log("Candidate: candidate@recruitment.com / Candidate@123");
 }
 

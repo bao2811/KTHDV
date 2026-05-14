@@ -134,6 +134,7 @@ enum SkillLevel {
 }
 
 enum ApprovalStatus {
+  PENDING
   APPROVED
   REJECTED
 }
@@ -244,6 +245,7 @@ model JobApproval {
 
 enum ApplicationStatus {
   SUBMITTED
+  SCREENING
   MATCHED
   INTERVIEWING
   OFFERED

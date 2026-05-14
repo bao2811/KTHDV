@@ -47,7 +47,7 @@ export class ApplicationsController {
   async getMyApplications(
     @CurrentUser('id') candidateId: number,
     @Query('status')
-    status?: 'SUBMITTED' | 'MATCHED' | 'INTERVIEWING' | 'OFFERED' | 'REJECTED',
+    status?: 'SUBMITTED' | 'SCREENING' | 'MATCHED' | 'INTERVIEWING' | 'OFFERED' | 'REJECTED',
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
