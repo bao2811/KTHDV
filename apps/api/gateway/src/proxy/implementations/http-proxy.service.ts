@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { IServiceProxy } from '../interfaces/service-proxy.interface';
@@ -6,15 +6,35 @@ import { IServiceProxy } from '../interfaces/service-proxy.interface';
 /**
  * HTTP Implementation of Service Proxy
  * Used during development to forward requests to microservices
- *
- * To migrate to RabbitMQ:
- * 1. Create HttpProxyService.rabbitmq.ts
- * 2. Replace service providers in proxy.module.ts
- * 3. Update SERVICE_PROXY token to use RabbitMQ implementation
  */
 @Injectable()
 export class HttpProxyService implements IServiceProxy {
   constructor(private httpService: HttpService) {}
+
+  private handleError(error: any, method: string): never {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const status = error.response.status;
+      const data = error.response.data;
+      throw new HttpException(
+        data || `HTTP ${method} failed with status ${status}`,
+        status,
+      );
+    } else if (error.request) {
+      // The request was made but no response was received
+      throw new HttpException(
+        `Service unavailable: No response from microservice during ${method}`,
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      throw new HttpException(
+        `Proxy error during ${method}: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async get<T = any>(url: string, config?: any): Promise<T> {
     try {
@@ -23,9 +43,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP GET failed: ${error.response?.data?.message || error.message}`,
-      );
+      this.handleError(error, 'GET');
     }
   }
 
@@ -36,9 +54,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP POST failed: ${error.response?.data?.message || error.message}`,
-      );
+      this.handleError(error, 'POST');
     }
   }
 
@@ -49,9 +65,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP PATCH failed: ${error.response?.data?.message || error.message}`,
-      );
+      this.handleError(error, 'PATCH');
     }
   }
 
@@ -62,9 +76,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        `HTTP DELETE failed: ${error.response?.data?.message || error.message}`,
-      );
+      this.handleError(error, 'DELETE');
     }
   }
 }

@@ -41,7 +41,7 @@ export class JobController {
   // Companies
   @ApiOperation({ summary: 'Tạo công ty mới' })
   @Post('companies')
-  @Roles('HR', 'Admin')
+  @Roles('Admin', 'HR')
   createCompany(@Body() body: CreateCompanyDto) {
     return this.jobService.createCompany(body);
   }
@@ -58,7 +58,7 @@ export class JobController {
   }
 
   @Put('companies/:id')
-  @Roles('HR', 'Admin')
+  @Roles('Admin')
   updateCompany(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCompanyDto>) {
     return this.jobService.updateCompany(id, body);
   }
@@ -71,7 +71,7 @@ export class JobController {
 
   // Locations
   @Post('locations')
-  @Roles('HR', 'Admin')
+  @Roles('Admin', 'HR')
   createLocation(@Body() body: CreateLocationDto) {
     return this.jobService.createLocation(body);
   }
@@ -87,7 +87,7 @@ export class JobController {
   }
 
   @Put('locations/:id')
-  @Roles('HR', 'Admin')
+  @Roles('Admin')
   updateLocation(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateLocationDto>) {
     return this.jobService.updateLocation(id, body);
   }
@@ -100,7 +100,7 @@ export class JobController {
 
   // Categories
   @Post('categories')
-  @Roles('HR', 'Admin')
+  @Roles('Admin', 'HR')
   createCategory(@Body() body: CreateCategoryDto) {
     return this.jobService.createCategory(body);
   }
@@ -116,7 +116,7 @@ export class JobController {
   }
 
   @Put('categories/:id')
-  @Roles('HR', 'Admin')
+  @Roles('Admin')
   updateCategory(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCategoryDto>) {
     return this.jobService.updateCategory(id, body);
   }
@@ -129,7 +129,7 @@ export class JobController {
 
   // Skills
   @Post('skills')
-  @Roles('HR', 'Admin')
+  @Roles('Admin', 'HR')
   createSkill(@Body() body: CreateSkillDto) {
     return this.jobService.createSkill(body);
   }
@@ -145,7 +145,7 @@ export class JobController {
   }
 
   @Put('skills/:id')
-  @Roles('HR', 'Admin')
+  @Roles('Admin')
   updateSkill(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateSkillDto>) {
     return this.jobService.updateSkill(id, body);
   }
@@ -185,8 +185,12 @@ export class JobController {
 
   @Patch(':id')
   @Roles('HR', 'Admin')
-  updateJob(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateJobDto) {
-    return this.jobService.updateJob(id, body);
+  updateJob(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateJobDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.jobService.updateJob(id, body, user);
   }
 
   @Delete(':id')

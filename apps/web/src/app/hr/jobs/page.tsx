@@ -11,7 +11,8 @@ import { userService } from '@/services/user.service';
 import { useAuth } from '@/context/AuthContext';
 
 const FILTER_TABS = [
-  { id: 'ALL', label: 'Tất cả công việc' },
+  { id: 'ALL', label: 'Tất cả' },
+  { id: 'PENDING', label: 'Chờ duyệt' },
   { id: 'ACTIVE', label: 'Đang hoạt động' },
   { id: 'DRAFT', label: 'Bản nháp' },
   { id: 'CLOSED', label: 'Đã đóng' },

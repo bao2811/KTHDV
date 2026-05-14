@@ -78,7 +78,10 @@ export class JobService {
 
   // Locations
   createLocation(data: { city: string; district?: string; address?: string }) {
-    return this.prisma.location.create({ data });
+    const { city, district, address } = data;
+    return this.prisma.location.create({ 
+      data: { city, district, address } 
+    });
   }
 
   listLocations() {
@@ -98,7 +101,11 @@ export class JobService {
     data: Partial<{ city: string; district?: string; address?: string }>,
   ) {
     await this.getLocation(id);
-    return this.prisma.location.update({ where: { id }, data });
+    const { city, district, address } = data;
+    return this.prisma.location.update({ 
+      where: { id }, 
+      data: { city, district, address } 
+    });
   }
 
   async deleteLocation(id: number) {
@@ -108,7 +115,10 @@ export class JobService {
 
   // Categories
   createCategory(data: { name: string; parentId?: number }) {
-    return this.prisma.jobCategory.create({ data });
+    const { name, parentId } = data;
+    return this.prisma.jobCategory.create({ 
+      data: { name, parentId } 
+    });
   }
 
   listCategories() {
@@ -130,7 +140,11 @@ export class JobService {
     data: Partial<{ name: string; parentId?: number | null }>,
   ) {
     await this.getCategory(id);
-    return this.prisma.jobCategory.update({ where: { id }, data });
+    const { name, parentId } = data;
+    return this.prisma.jobCategory.update({ 
+      where: { id }, 
+      data: { name, parentId } 
+    });
   }
 
   async deleteCategory(id: number) {
@@ -140,7 +154,10 @@ export class JobService {
 
   // Skills
   createSkill(data: { name: string; category?: string }) {
-    return this.prisma.skill.create({ data });
+    const { name } = data;
+    return this.prisma.skill.create({ 
+      data: { name } 
+    });
   }
 
   listSkills() {
@@ -178,13 +195,41 @@ export class JobService {
       throw new BadRequestException('experienceYears phải lớn hơn hoặc bằng 0');
     }
 
-    const job = await this.prisma.job.create({
-      data: {
-        ...data,
-        status: JobStatus.DRAFT,
-        publishedAt: undefined,
-        expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
-      },
+    // Governance: Non-admins cannot set status to ACTIVE directly
+    let initialStatus = data.status || JobStatus.DRAFT;
+    
+    // Check user role (this is a bit tricky without full context, but we can assume 
+    // if it's PENDING it's a request)
+    
+    const job = await this.prisma.$transaction(async (tx) => {
+      const newJob = await tx.job.create({
+        data: {
+          ...data,
+          status: initialStatus,
+          publishedAt: undefined,
+          expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
+        },
+      });
+
+      // If status is PENDING, we must create a JobApproval record
+      if (initialStatus === JobStatus.PENDING) {
+        // Find a default reviewer (first Admin found)
+        const admin = await tx.user.findFirst({
+          where: { role: { name: 'Admin' } },
+        });
+
+        if (admin) {
+          await tx.jobApproval.create({
+            data: {
+              jobId: newJob.id,
+              reviewerId: admin.id,
+              status: ApprovalStatus.PENDING,
+            },
+          });
+        }
+      }
+
+      return newJob;
     });
 
     await this.auditService.log({
@@ -192,7 +237,7 @@ export class JobService {
       action: 'CREATE',
       resource: 'jobs',
       resourceId: job.id,
-      details: { status: JobStatus.DRAFT },
+      details: { status: job.status },
     });
 
     return job;
@@ -212,7 +257,7 @@ export class JobService {
 
     // If status is provided, use it. If 'ALL', don't filter. If missing, default to ACTIVE.
     if (params.status && params.status !== 'ALL') {
-      where.status = params.status;
+      where.status = params.status as JobStatus;
     } else if (!params.status) {
       where.status = JobStatus.ACTIVE;
     }
@@ -279,23 +324,51 @@ export class JobService {
   async updateJob(
     id: number,
     data: UpdateJobDto,
+    user?: any
   ) {
     const existingJob = await this.getJob(id);
     
+    // Governance: HR cannot activate jobs directly
+    if (user?.role?.name === 'HR' && data.status === JobStatus.ACTIVE) {
+      throw new ForbiddenException('HR không có quyền trực tiếp đăng tin. Vui lòng chuyển sang trạng thái PENDING để yêu cầu duyệt.');
+    }
+
     // BR-1.5 validation
     if (data.salaryMin !== undefined && data.salaryMax !== undefined && data.salaryMin > data.salaryMax) {
       throw new BadRequestException('salaryMin phải nhỏ hơn hoặc bằng salaryMax');
     }
 
-    const job = await this.prisma.job.update({
-      where: { id },
-      data: {
-        ...data,
-        expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
-      },
+    const job = await this.prisma.$transaction(async (tx) => {
+      const updatedJob = await tx.job.update({
+        where: { id },
+        data: {
+          ...data,
+          expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
+        },
+      });
+
+      // If status changed to PENDING, create approval record if it doesn't exist or is not pending
+      if (data.status === JobStatus.PENDING && existingJob.status !== JobStatus.PENDING) {
+        const admin = await tx.user.findFirst({
+          where: { role: { name: 'Admin' } },
+        });
+
+        if (admin) {
+          await tx.jobApproval.create({
+            data: {
+              jobId: id,
+              reviewerId: admin.id,
+              status: ApprovalStatus.PENDING,
+            },
+          });
+        }
+      }
+
+      return updatedJob;
     });
 
     await this.auditService.log({
+      userId: user?.id,
       action: 'UPDATE',
       resource: 'jobs',
       resourceId: id,

@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -24,10 +25,10 @@ export class JobQueryDto {
   @Min(1)
   limit?: number = 10;
 
-  @ApiPropertyOptional({ enum: JobStatus })
-  @IsEnum(JobStatus)
+  @ApiPropertyOptional({ enum: [...Object.values(JobStatus), 'ALL'] })
+  @IsIn([...Object.values(JobStatus), 'ALL'])
   @IsOptional()
-  status?: JobStatus;
+  status?: JobStatus | 'ALL';
 
   @ApiPropertyOptional()
   @IsInt()
