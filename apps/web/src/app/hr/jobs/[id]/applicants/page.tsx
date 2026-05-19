@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import api from '@/lib/api';
 import { API_ROUTES, APPLICATION_STATUS } from '@/constants';
-import { toast } from 'react-hot-toast';
 import PipelineKanban from '@/components/features/jobs/PipelineKanban';
 
 const getStatusBadge = (status: string) => {
@@ -35,6 +34,12 @@ export default function JobApplicantsList() {
   const [isMatchingAll, setIsMatchingAll] = useState(false);
   const [matchingIds, setMatchingIds] = useState<Set<number>>(new Set());
   const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
+  const [notice, setNotice] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+
+  const showNotice = (type: 'success' | 'error' | 'info', message: string) => {
+    setNotice({ type, message });
+    window.setTimeout(() => setNotice(null), 3500);
+  };
 
   useEffect(() => {
     if (id) {
@@ -50,10 +55,10 @@ export default function JobApplicantsList() {
         api.get(API_ROUTES.JOBS.APPLICATIONS(id as string))
       ]);
       setJob(jobRes.data);
-      setApplicants(appsRes.data.items || []);
+      setApplicants(appsRes.data.data || appsRes.data.items || []);
     } catch (error) {
       console.error('Error fetching job data:', error);
-      toast.error('Không thể tải thông tin tin tuyển dụng');
+      showNotice('error', 'Không thể tải thông tin tin tuyển dụng');
     } finally {
       setLoading(false);
     }
@@ -63,7 +68,7 @@ export default function JobApplicantsList() {
     try {
       setMatchingIds(prev => new Set(prev).add(applicationId));
       await api.post(API_ROUTES.MATCHES.RUN, { applicationId });
-      toast.success('So khớp hoàn tất');
+      showNotice('success', 'So khớp hoàn tất');
       
       // Update status to MATCHED locally or refetch
       setApplicants(prev => prev.map(app => 
@@ -73,10 +78,10 @@ export default function JobApplicantsList() {
       // Refetch to get actual scores if needed, or just update state
       // For now, let's just refresh the whole list to be safe and get scores
       const appsRes = await api.get(API_ROUTES.JOBS.APPLICATIONS(id as string));
-      setApplicants(appsRes.data.items || []);
+      setApplicants(appsRes.data.data || appsRes.data.items || []);
     } catch (error) {
       console.error('Error running match:', error);
-      toast.error('Lỗi khi thực hiện so khớp');
+      showNotice('error', 'Lỗi khi thực hiện so khớp');
     } finally {
       setMatchingIds(prev => {
         const next = new Set(prev);
@@ -91,16 +96,16 @@ export default function JobApplicantsList() {
     try {
       const unmatched = applicants.filter(app => app.status === APPLICATION_STATUS.SUBMITTED);
       if (unmatched.length === 0) {
-        toast.info('Không có ứng viên mới cần so khớp');
+        showNotice('info', 'Không có ứng viên mới cần so khớp');
         return;
       }
 
       await Promise.all(unmatched.map(app => api.post(API_ROUTES.MATCHES.RUN, { applicationId: app.id })));
-      toast.success(`Đã hoàn thành so khớp cho ${unmatched.length} ứng viên`);
+      showNotice('success', `Đã hoàn thành so khớp cho ${unmatched.length} ứng viên`);
       fetchJobData();
     } catch (error) {
       console.error('Error running all matches:', error);
-      toast.error('Có lỗi xảy ra khi so khớp hàng loạt');
+      showNotice('error', 'Có lỗi xảy ra khi so khớp hàng loạt');
     } finally {
       setIsMatchingAll(false);
     }
@@ -114,13 +119,13 @@ export default function JobApplicantsList() {
       }
 
       await api.patch(API_ROUTES.JOBS.UPDATE_APPLICATION_STATUS(applicationId), { status });
-      toast.success('Cập nhật trạng thái thành công');
+      showNotice('success', 'Cập nhật trạng thái thành công');
       setApplicants(prev => prev.map(app => 
         app.id === applicationId ? { ...app, status } : app
       ));
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Không thể cập nhật trạng thái');
+      showNotice('error', 'Không thể cập nhật trạng thái');
     }
   };
 
@@ -143,12 +148,24 @@ export default function JobApplicantsList() {
 
   return (
     <div className="flex-1 flex flex-col gap-stack-gap-lg">
+      {notice && (
+        <div className={`rounded-xl px-4 py-3 text-sm font-semibold border ${
+          notice.type === 'error'
+            ? 'bg-error/10 text-error border-error/20'
+            : notice.type === 'success'
+              ? 'bg-success/10 text-success border-success/20'
+              : 'bg-primary/10 text-primary border-primary/20'
+        }`}>
+          {notice.message}
+        </div>
+      )}
+
       {/* Breadcrumb & Actions */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center space-x-2 text-sm text-on-surface-variant">
           <Link href="/hr/jobs" className="hover:text-primary transition-colors">Tin tuyển dụng</Link>
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
-          <Link href={`/hr/jobs/${jobId}`} className="hover:text-primary transition-colors">{job?.title || 'Chi tiết'}</Link>
+          <Link href={`/hr/jobs/${id}`} className="hover:text-primary transition-colors">{job?.title || 'Chi tiết'}</Link>
           <span className="material-symbols-outlined text-[16px]">chevron_right</span>
           <span className="text-on-surface font-medium">Ứng viên</span>
         </div>

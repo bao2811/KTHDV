@@ -107,4 +107,23 @@ export class HttpProxyService implements IServiceProxy {
       this.handleError(error, 'DELETE');
     }
   }
+
+  async stream(url: string, config?: any): Promise<any> {
+    try {
+      const mergedConfig = {
+        ...config,
+        responseType: 'stream',
+        headers: {
+          ...config?.headers,
+          'ngrok-skip-browser-warning': 'true',
+        },
+      };
+      const response = await firstValueFrom(
+        this.httpService.get(url, mergedConfig),
+      );
+      return response.data;
+    } catch (error: any) {
+      this.handleError(error, 'STREAM');
+    }
+  }
 }

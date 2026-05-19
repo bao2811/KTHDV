@@ -28,8 +28,15 @@ export const jobService = {
     await api.delete(API_ROUTES.JOBS.DETAILS(id));
   },
 
-  async addJobSkill(jobId: number | string, skillId: number): Promise<any> {
-    const response = await api.post(API_ROUTES.JOBS.SKILLS_SUB(jobId), { skillId });
+  async addJobSkill(
+    jobId: number | string,
+    data: { skillId: number; level?: string; minYears?: number },
+  ): Promise<any> {
+    const response = await api.post(API_ROUTES.JOBS.SKILLS_SUB(jobId), {
+      level: "REQUIRED",
+      minYears: 0,
+      ...data,
+    });
     return response.data;
   },
 
@@ -48,6 +55,15 @@ export const jobService = {
     return response.data;
   },
 
+  async updateCompany(id: number | string, data: any): Promise<any> {
+    const response = await api.patch(`${API_ROUTES.JOBS.COMPANIES}/${id}`, data);
+    return response.data;
+  },
+
+  async deleteCompanyRecord(id: number | string): Promise<void> {
+    await api.delete(`${API_ROUTES.JOBS.COMPANIES}/${id}`);
+  },
+
   async getCategories(): Promise<any[]> {
     const response = await api.get(API_ROUTES.JOBS.CATEGORIES);
     return response.data;
@@ -56,6 +72,15 @@ export const jobService = {
   async createCategory(data: any): Promise<any> {
     const response = await api.post(API_ROUTES.JOBS.CATEGORIES, data);
     return response.data;
+  },
+
+  async updateCategory(id: number | string, data: any): Promise<any> {
+    const response = await api.patch(`${API_ROUTES.JOBS.CATEGORIES}/${id}`, data);
+    return response.data;
+  },
+
+  async deleteCategory(id: number | string): Promise<void> {
+    await api.delete(`${API_ROUTES.JOBS.CATEGORIES}/${id}`);
   },
 
   async getLocations(): Promise<any[]> {
@@ -68,6 +93,15 @@ export const jobService = {
     return response.data;
   },
 
+  async updateLocation(id: number | string, data: any): Promise<any> {
+    const response = await api.patch(`${API_ROUTES.JOBS.LOCATIONS}/${id}`, data);
+    return response.data;
+  },
+
+  async deleteLocation(id: number | string): Promise<void> {
+    await api.delete(`${API_ROUTES.JOBS.LOCATIONS}/${id}`);
+  },
+
   async getSkills(): Promise<any[]> {
     const response = await api.get(API_ROUTES.JOBS.SKILLS);
     return response.data;
@@ -76,6 +110,15 @@ export const jobService = {
   async createSkill(data: any): Promise<any> {
     const response = await api.post(API_ROUTES.JOBS.SKILLS, data);
     return response.data;
+  },
+
+  async updateSkill(id: number | string, data: any): Promise<any> {
+    const response = await api.patch(`${API_ROUTES.JOBS.SKILLS}/${id}`, data);
+    return response.data;
+  },
+
+  async deleteSkill(id: number | string): Promise<void> {
+    await api.delete(`${API_ROUTES.JOBS.SKILLS}/${id}`);
   },
 
   async listJobSkills(jobId: number | string): Promise<any[]> {

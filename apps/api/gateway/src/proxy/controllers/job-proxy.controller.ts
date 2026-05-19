@@ -249,14 +249,14 @@ export class JobProxyController {
   @Get('postings')
   async getJobs(
     @Request() req: any,
-    @Query('status') status?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: Record<string, string | number | undefined>,
   ) {
     const url = new URL(`${JOB_SERVICE_URL}/jobs`);
-    if (status) url.searchParams.append('status', status);
-    if (page) url.searchParams.append('page', page.toString());
-    if (limit) url.searchParams.append('limit', limit.toString());
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.append(key, value.toString());
+      }
+    });
     return this.proxy.get(url.toString(), getAuthConfig(req));
   }
 
@@ -277,28 +277,6 @@ export class JobProxyController {
   ) {
     return this.proxy.patch(
       `${JOB_SERVICE_URL}/jobs/${id}`,
-      body,
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:id/close')
-  async closeJob(@Request() req: any, @Param('id') id: number) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}/close`,
-      {},
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:id/extend')
-  async extendJob(
-    @Request() req: any,
-    @Param('id') id: number,
-    @Body() body: { expiredAt: string },
-  ) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}/extend`,
       body,
       getAuthConfig(req),
     );

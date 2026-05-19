@@ -144,6 +144,7 @@ export default function JobDetailPage() {
               <p className="font-body-md text-body-md text-on-primary/80 mb-8 relative z-10">Gia nhập đội ngũ của chúng tôi ngay hôm nay.</p>
               
               <button 
+                onClick={() => router.push(`/jobs/${job.id}/apply`)}
                 className="w-full bg-surface text-primary font-label-bold text-label-bold py-4 rounded-xl shadow-md hover:bg-surface-container-high transition-all active:scale-[0.98] relative z-10 uppercase tracking-widest"
               >
                 ỨNG TUYỂN NGAY

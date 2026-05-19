@@ -48,5 +48,20 @@ export const candidateService = {
   async deleteEducation(id: number | string): Promise<any> {
     const response = await api.delete(`/candidates/educations/${id}`);
     return response.data;
+  },
+
+  async applyForJob(data: { jobId: number; resumeId: number }): Promise<any> {
+    const response = await api.post(API_ROUTES.CANDIDATES.APPLICATIONS, data);
+    return response.data;
+  },
+
+  async getMyApplications(params: any = {}): Promise<ApiResponse<any[]>> {
+    const response = await api.get(API_ROUTES.CANDIDATES.APPLICATIONS, { params });
+    return response.data;
+  },
+
+  async cancelApplication(id: number | string): Promise<any> {
+    const response = await api.delete(`${API_ROUTES.CANDIDATES.APPLICATIONS}/${id}`);
+    return response.data;
   }
 };

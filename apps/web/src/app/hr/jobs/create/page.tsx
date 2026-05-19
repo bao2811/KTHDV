@@ -144,9 +144,12 @@ export default function CreateJobPage() {
         locationId: parseInt(formData.locationId),
         categoryId: parseInt(formData.categoryId),
         jobType: formData.jobType,
-        salaryMin: formData.minSalary ? parseInt(formData.minSalary) : null,
-        salaryMax: formData.maxSalary ? parseInt(formData.maxSalary) : null,
-        experienceYears: 0, // Default for now
+        salaryMin: formData.minSalary ? parseInt(formData.minSalary, 10) : undefined,
+        salaryMax: formData.maxSalary ? parseInt(formData.maxSalary, 10) : undefined,
+        experienceYears: Math.max(
+          0,
+          ...formData.jobSkills.map((skill) => Number(skill.minYears) || 0),
+        ),
         status: 'PENDING' // HR initiates request, so it should be pending approval
       };
 
@@ -156,7 +159,11 @@ export default function CreateJobPage() {
       // Add Skills
       const skillPromises = formData.jobSkills
         .filter(s => s.skillId)
-        .map(s => jobService.addJobSkill(jobId, parseInt(s.skillId)));
+        .map(s => jobService.addJobSkill(jobId, {
+          skillId: parseInt(s.skillId, 10),
+          level: s.level,
+          minYears: Number(s.minYears) || 0,
+        }));
 
       // Add Hard Filters
       const filterPromises = formData.hardFilters.map(f => jobService.addHardFilter(jobId, {
@@ -179,9 +186,29 @@ export default function CreateJobPage() {
     }
   };
 
-  const addSkill = (skill: Skill) => {
-    setSelectedSkills([...selectedSkills, { skillId: skill.id, name: skill.name, level: 'REQUIRED', minYears: 0 }]);
-    setSkillSearch('');
+  const handleSaveDraft = async () => {
+    try {
+      setIsSubmitting(true);
+      await jobService.createJob({
+        title: formData.title || 'Bản nháp chưa đặt tên',
+        description: formData.description || 'Bản nháp chưa có mô tả',
+        companyId: formData.companyId ? parseInt(formData.companyId, 10) : undefined,
+        locationId: formData.locationId ? parseInt(formData.locationId, 10) : undefined,
+        categoryId: formData.categoryId ? parseInt(formData.categoryId, 10) : undefined,
+        jobType: formData.jobType,
+        salaryMin: formData.minSalary ? parseInt(formData.minSalary, 10) : undefined,
+        salaryMax: formData.maxSalary ? parseInt(formData.maxSalary, 10) : undefined,
+        experienceYears: 0,
+        status: 'DRAFT',
+      });
+      alert('Đã lưu bản nháp!');
+      router.push('/hr/jobs');
+    } catch (error) {
+      console.error('Failed to save draft:', error);
+      alert('Không thể lưu bản nháp.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getCompanyName = (id: string) => companies.find(c => c.id.toString() === id)?.name || 'Chưa chọn';

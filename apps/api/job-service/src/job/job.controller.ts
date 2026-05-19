@@ -26,6 +26,7 @@ import { AddJobSkillDto } from './dto/add-job-skill.dto';
 import { CreateHardFilterDto } from './dto/create-hard-filter.dto';
 import { ExtendJobDto } from './dto/extend-job.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -48,11 +49,13 @@ export class JobController {
 
   @ApiOperation({ summary: 'Danh sách công ty' })
   @Get('companies')
+  @Public()
   listCompanies() {
     return this.jobService.listCompanies();
   }
 
   @Get('companies/:id')
+  @Public()
   getCompany(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getCompany(id);
   }
@@ -60,6 +63,12 @@ export class JobController {
   @Put('companies/:id')
   @Roles('Admin')
   updateCompany(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCompanyDto>) {
+    return this.jobService.updateCompany(id, body);
+  }
+
+  @Patch('companies/:id')
+  @Roles('Admin')
+  patchCompany(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCompanyDto>) {
     return this.jobService.updateCompany(id, body);
   }
 
@@ -77,11 +86,13 @@ export class JobController {
   }
 
   @Get('locations')
+  @Public()
   listLocations() {
     return this.jobService.listLocations();
   }
 
   @Get('locations/:id')
+  @Public()
   getLocation(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getLocation(id);
   }
@@ -89,6 +100,12 @@ export class JobController {
   @Put('locations/:id')
   @Roles('Admin')
   updateLocation(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateLocationDto>) {
+    return this.jobService.updateLocation(id, body);
+  }
+
+  @Patch('locations/:id')
+  @Roles('Admin')
+  patchLocation(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateLocationDto>) {
     return this.jobService.updateLocation(id, body);
   }
 
@@ -106,11 +123,13 @@ export class JobController {
   }
 
   @Get('categories')
+  @Public()
   listCategories() {
     return this.jobService.listCategories();
   }
 
   @Get('categories/:id')
+  @Public()
   getCategory(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getCategory(id);
   }
@@ -118,6 +137,12 @@ export class JobController {
   @Put('categories/:id')
   @Roles('Admin')
   updateCategory(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCategoryDto>) {
+    return this.jobService.updateCategory(id, body);
+  }
+
+  @Patch('categories/:id')
+  @Roles('Admin')
+  patchCategory(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCategoryDto>) {
     return this.jobService.updateCategory(id, body);
   }
 
@@ -135,11 +160,13 @@ export class JobController {
   }
 
   @Get('skills')
+  @Public()
   listSkills() {
     return this.jobService.listSkills();
   }
 
   @Get('skills/:id')
+  @Public()
   getSkill(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getSkill(id);
   }
@@ -147,6 +174,12 @@ export class JobController {
   @Put('skills/:id')
   @Roles('Admin')
   updateSkill(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateSkillDto>) {
+    return this.jobService.updateSkill(id, body);
+  }
+
+  @Patch('skills/:id')
+  @Roles('Admin')
+  patchSkill(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateSkillDto>) {
     return this.jobService.updateSkill(id, body);
   }
 
@@ -168,17 +201,23 @@ export class JobController {
   @ApiOperation({ summary: 'Tạo tin tuyển dụng mới' })
   @Post()
   @Roles('HR', 'Admin')
-  createJob(@Body() body: CreateJobDto, @CurrentUser('id') userId: number) {
-    return this.jobService.createJob({ ...body, createdByUserId: userId });
+  createJob(@Body() body: CreateJobDto, @CurrentUser() user: any) {
+    return this.jobService.createJob({
+      ...body,
+      createdByUserId: user?.id,
+      createdByRole: user?.role,
+    });
   }
 
   @ApiOperation({ summary: 'Danh sách tin tuyển dụng (kèm bộ lọc)' })
   @Get()
+  @Public()
   listJobs(@Query() query: JobQueryDto) {
     return this.jobService.listJobs(query);
   }
 
   @Get(':id')
+  @Public()
   getJob(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getJob(id);
   }
@@ -235,15 +274,6 @@ export class JobController {
   @Roles('HR', 'Manager', 'Admin')
   getApprovals(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getApprovals(id);
-  }
-
-  @Patch('jobs/:jobId/approvals/:approvalId')
-  reviewApproval(
-    @Param('jobId', ParseIntPipe) jobId: number,
-    @Param('approvalId', ParseIntPipe) approvalId: number,
-    @Body() body: any,
-  ) {
-    return this.jobService.reviewApproval(jobId, approvalId, body);
   }
 
   // Job Skills
@@ -323,4 +353,3 @@ export class JobController {
     return this.jobService.getJobStatistics(jobId);
   }
 }
-
