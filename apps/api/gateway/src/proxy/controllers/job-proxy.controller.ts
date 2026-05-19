@@ -282,6 +282,28 @@ export class JobProxyController {
     );
   }
 
+  @Patch('postings/:id/close')
+  async closeJob(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/jobs/${id}/close`,
+      {},
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('postings/:id/extend')
+  async extendJob(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Body() body: { expiredAt: string },
+  ) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/jobs/${id}/extend`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
   @Delete('postings/:id')
   async deleteJob(@Request() req: any, @Param('id') id: number) {
     return this.proxy.delete(
@@ -347,6 +369,20 @@ export class JobProxyController {
   async getJobSkills(@Request() req: any, @Param('jobId') jobId: number) {
     return this.proxy.get(
       `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/skills`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('postings/:jobId/approvals/:approvalId')
+  async reviewJobApproval(
+    @Request() req: any,
+    @Param('jobId') jobId: number,
+    @Param('approvalId') approvalId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/approvals/${approvalId}`,
+      body,
       getAuthConfig(req),
     );
   }

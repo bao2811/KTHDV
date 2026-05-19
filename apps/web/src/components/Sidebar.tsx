@@ -32,6 +32,7 @@ const getNavItems = (role: string): NavItem[] => {
       return [
         { label: 'Bảng điều khiển', href: '/admin', icon: 'dashboard' },
         { label: 'Người dùng', href: '/admin/users', icon: 'manage_accounts' },
+        { label: 'Referral', href: '/admin/referrals', icon: 'how_to_reg' },
         { label: 'Cài đặt hệ thống', href: '/admin/settings', icon: 'settings' },
       ];
     case 'candidate':

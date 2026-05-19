@@ -1,5 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { ApplicationStatus, Company, Job, Location, JobCategory, Skill, JobApproval, JobSkill, HardFilter } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -14,15 +13,15 @@ export class JobService {
     size?: string;
     website?: string;
     description?: string;
-  }): Promise<Company> {
+  }): Promise<any> {
     return this.prisma.company.create({ data });
   }
 
-  listCompanies(): Promise<Company[]> {
+  listCompanies(): Promise<any[]> {
     return this.prisma.company.findMany({ orderBy: { id: 'asc' } });
   }
 
-  async getCompany(id: number): Promise<Company> {
+  async getCompany(id: number): Promise<any> {
     const company = await this.prisma.company.findUnique({ where: { id } });
     if (!company) {
       throw new NotFoundException('Company không tồn tại');
@@ -158,7 +157,7 @@ export class JobService {
     publishedAt?: string;
     expiredAt?: string;
     skills?: Array<{ skillId: number; level: 'REQUIRED' | 'NICE_TO_HAVE'; minYears?: number }>;
-  }): Promise<Job> {
+  }): Promise<any> {
     const { skills, ...jobData } = data;
 
     return this.prisma.$transaction(async (tx) => {
@@ -189,7 +188,7 @@ export class JobService {
           category: true,
           jobSkills: { include: { skill: true } },
         },
-      }) as unknown as Job;
+      }) as unknown as any;
     });
   }
 
@@ -256,7 +255,7 @@ export class JobService {
     };
   }
 
-  async getJob(id: number): Promise<Job> {
+  async getJob(id: number): Promise<any> {
     const job = await this.prisma.job.findUnique({
       where: { id },
       include: {
@@ -378,6 +377,29 @@ export class JobService {
     return this.prisma.job.delete({ where: { id } });
   }
 
+  async closeJob(id: number) {
+    await this.getJob(id);
+    return this.prisma.job.update({
+      where: { id },
+      data: { status: 'CLOSED' },
+    });
+  }
+
+  async extendJob(id: number, expiredAt: string) {
+    await this.getJob(id);
+    if (!expiredAt || Number.isNaN(new Date(expiredAt).getTime())) {
+      throw new BadRequestException('expiredAt khong hop le');
+    }
+
+    return this.prisma.job.update({
+      where: { id },
+      data: {
+        expiredAt: new Date(expiredAt),
+        status: 'ACTIVE',
+      },
+    });
+  }
+
   // Approvals
   async createApproval(
     jobId: number,
@@ -406,6 +428,46 @@ export class JobService {
     });
   }
 
+  async reviewApproval(
+    jobId: number,
+    approvalId: number,
+    data: { status: 'APPROVED' | 'REJECTED'; comment?: string },
+  ) {
+    await this.getJob(jobId);
+    const validStatuses = ['APPROVED', 'REJECTED'];
+    if (!validStatuses.includes(data.status)) {
+      throw new BadRequestException('status phai la APPROVED hoac REJECTED');
+    }
+
+    const approval = await this.prisma.jobApproval.findFirst({
+      where: { id: approvalId, jobId },
+    });
+    if (!approval) {
+      throw new NotFoundException('Approval khong ton tai');
+    }
+
+    const [updatedApproval] = await this.prisma.$transaction([
+      this.prisma.jobApproval.update({
+        where: { id: approvalId },
+        data: {
+          status: data.status,
+          comment: data.comment,
+          reviewedAt: new Date(),
+        },
+        include: { reviewer: true, job: true },
+      }),
+      this.prisma.job.update({
+        where: { id: jobId },
+        data: {
+          status: data.status === 'APPROVED' ? 'ACTIVE' : 'DRAFT',
+          publishedAt: data.status === 'APPROVED' ? new Date() : undefined,
+        },
+      }),
+    ]);
+
+    return updatedApproval;
+  }
+
   // ===== Applications =====
   async getJobApplications(
     jobId: number,
@@ -420,7 +482,7 @@ export class JobService {
     const where = params.status
       ? {
           jobId,
-          status: params.status as ApplicationStatus,
+          status: params.status as any,
         }
       : { jobId };
 

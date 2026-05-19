@@ -43,6 +43,48 @@ export const API_ROUTES = {
   PIPELINE: {
     STAGES: "/pipeline-stages",
   },
+  ADMIN: {
+    // Stats & Dashboard
+    STATS: "/admin/stats",
+    DASHBOARD_CHART: "/admin/dashboard-chart",
+    // Users
+    USERS: "/users",
+    USER_DETAIL: (id: number | string) => `/users/${id}`,
+    USER_STATUS: (id: number | string) => `/users/${id}/status`,
+    USER_ROLE: (id: number | string) => `/users/${id}/role`,
+    // Roles & Permissions
+    ROLES: "/users/roles",
+    ROLE_DETAIL: (id: number | string) => `/users/roles/${id}`,
+    ROLE_PERMISSIONS: (id: number | string) => `/users/roles/${id}/permissions`,
+    PERMISSIONS: "/users/permissions",
+    // Audit Logs
+    AUDIT_LOGS: "/admin/audit-logs",
+    // Jobs (admin view — reuses job-service proxy)
+    JOBS_ALL: "/jobs/postings",
+    JOB_CLOSE: (id: number | string) => `/jobs/postings/${id}/close`,
+    JOB_EXTEND: (id: number | string) => `/jobs/postings/${id}/extend`,
+    JOB_APPROVALS: (id: number | string) => `/jobs/postings/${id}/approvals`,
+    JOB_APPROVAL_ACTION: (jobId: number | string, approvalId: number | string) =>
+      `/jobs/postings/${jobId}/approvals/${approvalId}`,
+    // Master Data
+    COMPANIES: "/jobs/companies",
+    COMPANY_DETAIL: (id: number | string) => `/jobs/companies/${id}`,
+    CATEGORIES: "/jobs/categories",
+    CATEGORY_DETAIL: (id: number | string) => `/jobs/categories/${id}`,
+    LOCATIONS: "/jobs/locations",
+    LOCATION_DETAIL: (id: number | string) => `/jobs/locations/${id}`,
+    SKILLS: "/jobs/skills",
+    SKILL_DETAIL: (id: number | string) => `/jobs/skills/${id}`,
+    // Applications (admin cross-job view)
+    APPLICATIONS_ALL: "/applications",
+    APPLICATION_STATUS: (id: number | string) => `/applications/${id}/status`,
+    // Interviews (admin view)
+    INTERVIEWS_ALL: "/interviews/list",
+    INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}/cancel`,
+    // Referrals
+    REFERRALS: "/admin/referrals",
+    REFERRAL_VERIFY: (id: number | string) => `/admin/referrals/${id}/verify`,
+  },
 };
 
 export const JOB_TYPES = {
