@@ -6,7 +6,6 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { JOB_STATUS_LABELS, JOB_TYPE_LABELS } from '@/constants';
 import { useJobs } from '@/hooks/useJobs';
 import { jobService } from '@/services/job.service';
-import { userService } from '@/services/user.service';
 import { Job, UserRole } from '@/types';
 
 const FILTER_TABS = [
@@ -15,6 +14,7 @@ const FILTER_TABS = [
   { id: 'ACTIVE', label: 'Đang hoạt động' },
   { id: 'DRAFT', label: 'Bản nháp' },
   { id: 'CLOSED', label: 'Đã đóng' },
+  { id: 'EXPIRED', label: 'Het han' },
 ];
 
 export default function JobManagement() {
@@ -39,20 +39,15 @@ export default function JobManagement() {
   };
 
   const handleRequestApproval = async (jobId: string | number) => {
-    if (!confirm('Bạn có chắc chắn muốn gửi yêu cầu duyệt cho công việc này?')) return;
-    try {
-      const reviewers = await userService.getReviewers();
-      if (reviewers.length === 0) {
-        alert('Không tìm thấy người duyệt nào (Admin/Manager).');
-        return;
-      }
+    if (!confirm('Gui yeu cau duyet tin tuyen dung nay?')) return;
 
-      await jobService.requestApproval(jobId, reviewers[0].id);
+    try {
+      await jobService.requestApproval(jobId);
       await refresh();
-      alert('Đã gửi yêu cầu duyệt thành công.');
+      alert('Da gui yeu cau duyet thanh cong.');
     } catch (error) {
       console.error('Failed to request approval:', error);
-      alert('Gửi yêu cầu duyệt thất bại.');
+      alert('Gui yeu cau duyet that bai.');
     }
   };
 
@@ -64,6 +59,20 @@ export default function JobManagement() {
     } catch (error) {
       console.error('Failed to close job:', error);
       alert('Đóng công việc thất bại.');
+    }
+  };
+
+  const handleExtendJob = async (jobId: string | number) => {
+    const expiredAt = prompt('Nhap ngay het han moi (YYYY-MM-DD):');
+    if (!expiredAt) return;
+
+    try {
+      await jobService.extendJob(jobId, new Date(expiredAt).toISOString());
+      await refresh();
+      alert('Da gia han tin tuyen dung.');
+    } catch (error) {
+      console.error('Failed to extend job:', error);
+      alert('Gia han tin tuyen dung that bai.');
     }
   };
 
@@ -181,6 +190,11 @@ export default function JobManagement() {
                     {job.status === 'ACTIVE' && (
                       <button onClick={() => handleCloseJob(job.id)} className="px-4 py-2.5 bg-error/10 text-error font-label-bold text-label-bold rounded-lg hover:bg-error hover:text-on-error transition-all">
                         Đóng
+                      </button>
+                    )}
+                    {(job.status === 'ACTIVE' || job.status === 'EXPIRED') && (
+                      <button onClick={() => handleExtendJob(job.id)} className="px-4 py-2.5 bg-primary/10 text-primary font-label-bold text-label-bold rounded-lg hover:bg-primary hover:text-on-primary transition-all">
+                        Gia han
                       </button>
                     )}
                     <button onClick={() => setDeleteConfirm(job.id)} className="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant hover:bg-error/10 hover:text-error transition-all">

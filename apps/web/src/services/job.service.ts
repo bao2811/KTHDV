@@ -149,8 +149,11 @@ export const jobService = {
     return response.data;
   },
 
-  async requestApproval(jobId: number | string, reviewerId: number): Promise<any> {
-    const response = await api.post(API_ROUTES.JOBS.APPROVALS(jobId), { reviewerId });
+  async requestApproval(jobId: number | string, reviewerId?: number): Promise<any> {
+    const response = await api.post(
+      API_ROUTES.JOBS.APPROVALS(jobId),
+      reviewerId ? { reviewerId } : {},
+    );
     return response.data;
   },
 

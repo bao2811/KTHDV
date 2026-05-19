@@ -223,6 +223,36 @@ export class JobService {
     return value === null || value === undefined ? undefined : value;
   }
 
+  private async findReviewer(tx: any, reviewerId?: number) {
+    if (reviewerId) {
+      const reviewer = await tx.user.findFirst({
+        where: {
+          id: reviewerId,
+          role: { name: { in: ['Manager', 'Admin'] } },
+        },
+      });
+
+      if (!reviewer) {
+        throw new BadRequestException('Nguoi duyet khong hop le');
+      }
+
+      return reviewer;
+    }
+
+    const reviewer = await tx.user.findFirst({
+      where: { role: { name: { in: ['Manager', 'Admin'] } } },
+      orderBy: { id: 'asc' },
+    });
+
+    if (!reviewer) {
+      throw new BadRequestException(
+        'Chua co tai khoan Admin/Manager de duyet tin tuyen dung',
+      );
+    }
+
+    return reviewer;
+  }
+
   async createJob(
     data: CreateJobDto & { createdByUserId?: number; createdByRole?: any },
   ): Promise<Job> {
@@ -264,21 +294,14 @@ export class JobService {
 
       // If status is PENDING, we must create a JobApproval record
       if (initialStatus === JobStatus.PENDING) {
-        // Find a default reviewer when the UI does not pick one explicitly.
-        const reviewer = await tx.user.findFirst({
-          where: { role: { name: { in: ['Manager', 'Admin'] } } },
-          orderBy: { id: 'asc' },
+        const reviewer = await this.findReviewer(tx);
+        await tx.jobApproval.create({
+          data: {
+            jobId: newJob.id,
+            reviewerId: reviewer.id,
+            status: ApprovalStatus.PENDING,
+          },
         });
-
-        if (reviewer) {
-          await tx.jobApproval.create({
-            data: {
-              jobId: newJob.id,
-              reviewerId: reviewer.id,
-              status: ApprovalStatus.PENDING,
-            },
-          });
-        }
       }
 
       return newJob;
@@ -415,20 +438,14 @@ export class JobService {
 
       // If status changed to PENDING, create approval record if it doesn't exist or is not pending
       if (data.status === JobStatus.PENDING && existingJob.status !== JobStatus.PENDING) {
-        const reviewer = await tx.user.findFirst({
-          where: { role: { name: { in: ['Manager', 'Admin'] } } },
-          orderBy: { id: 'asc' },
+        const reviewer = await this.findReviewer(tx);
+        await tx.jobApproval.create({
+          data: {
+            jobId: id,
+            reviewerId: reviewer.id,
+            status: ApprovalStatus.PENDING,
+          },
         });
-
-        if (reviewer) {
-          await tx.jobApproval.create({
-            data: {
-              jobId: id,
-              reviewerId: reviewer.id,
-              status: ApprovalStatus.PENDING,
-            },
-          });
-        }
       }
 
       return updatedJob;
@@ -468,6 +485,12 @@ export class JobService {
       throw new BadRequestException('Công việc đã được đóng trước đó');
     }
     
+    if (![JobStatus.ACTIVE, JobStatus.EXPIRED].includes(job.status)) {
+      throw new BadRequestException(
+        'Chi co the dong tin dang hoat dong hoac da het han',
+      );
+    }
+
     return this.prisma.$transaction(async (tx) => {
       // BR-1.4: Khi Job chuyển sang Closed/Expired, tất cả Application đang Submitted chuyển thành Rejected
       await tx.application.updateMany({
@@ -500,6 +523,12 @@ export class JobService {
     }
     
     // BR-1.2: HR có thể gia hạn (tạo mới expiredAt)
+    if (![JobStatus.ACTIVE, JobStatus.EXPIRED].includes(job.status)) {
+      throw new BadRequestException(
+        'Chi co the gia han tin dang hoat dong hoac da het han',
+      );
+    }
+
     const updatedJob = await this.prisma.job.update({
       where: { id },
       data: { 
@@ -519,7 +548,7 @@ export class JobService {
   }
 
   // Approvals
-  async requestApproval(jobId: number, reviewerId: number) {
+  async requestApproval(jobId: number, reviewerId?: number) {
     const job = await this.getJob(jobId);
     
     // BR-1.1: Job phải được phê duyệt (Approved) trước khi chuyển sang ACTIVE
@@ -541,10 +570,11 @@ export class JobService {
         data: { status: JobStatus.PENDING },
       });
 
+      const reviewer = await this.findReviewer(tx, reviewerId);
       const approval = await tx.jobApproval.create({
         data: {
           jobId,
-          reviewerId,
+          reviewerId: reviewer.id,
           status: 'PENDING' as any,
         },
       });
@@ -553,7 +583,7 @@ export class JobService {
         action: 'REQUEST_APPROVAL',
         resource: 'jobs',
         resourceId: jobId,
-        details: { reviewerId, approvalId: approval.id },
+        details: { reviewerId: reviewer.id, approvalId: approval.id },
       });
 
       return approval;

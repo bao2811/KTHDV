@@ -256,7 +256,7 @@ export class JobController {
   @Post(':id/approvals')
   @Roles('HR', 'Admin')
   requestApproval(@Param('id', ParseIntPipe) id: number, @Body() body: RequestApprovalDto) {
-    return this.jobService.requestApproval(id, body.reviewerId);
+    return this.jobService.requestApproval(id, body?.reviewerId);
   }
 
   @ApiOperation({ summary: 'Duyệt hoặc từ chối tin' })

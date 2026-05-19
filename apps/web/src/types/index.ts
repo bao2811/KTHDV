@@ -68,6 +68,12 @@ export interface Job {
     minYears: number;
     skill: Skill;
   }>;
+  hardFilters?: Array<{
+    id: number;
+    filterType: string;
+    operator: string;
+    requiredValue: string;
+  }>;
   createdAt: string;
   updatedAt?: string;
   publishedAt?: string;

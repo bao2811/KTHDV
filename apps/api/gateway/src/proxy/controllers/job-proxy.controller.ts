@@ -232,12 +232,6 @@ export class JobProxyController {
   // Job Postings
   @Post('postings')
   async createJob(@Request() req: any, @Body() body: any) {
-    // Inject current user ID as creator
-    const payload = {
-      ...body,
-      createdByUserId: req.user.id,
-    };
-    
     return this.proxy.post(
       `${JOB_SERVICE_URL}/jobs`,
       body,
@@ -404,20 +398,6 @@ export class JobProxyController {
   async getJobSkills(@Request() req: any, @Param('jobId') jobId: number) {
     return this.proxy.get(
       `${JOB_SERVICE_URL}/jobs/${jobId}/skills`,
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:jobId/approvals/:approvalId')
-  async reviewJobApproval(
-    @Request() req: any,
-    @Param('jobId') jobId: number,
-    @Param('approvalId') approvalId: number,
-    @Body() body: any,
-  ) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/approvals/${approvalId}`,
-      body,
       getAuthConfig(req),
     );
   }

@@ -150,7 +150,7 @@ export default function CreateJobPage() {
           0,
           ...formData.jobSkills.map((skill) => Number(skill.minYears) || 0),
         ),
-        status: 'PENDING' // HR initiates request, so it should be pending approval
+        status: 'DRAFT'
       };
 
       const job = await jobService.createJob(payload);
@@ -173,9 +173,8 @@ export default function CreateJobPage() {
       }));
 
       await Promise.all([...skillPromises, ...filterPromises]);
+      await jobService.requestApproval(jobId);
 
-      // Automatically request approval from an admin/manager if needed
-      // For now, just notifying success
       alert('Đã khởi tạo đơn yêu cầu tuyển dụng thành công! Đơn đang chờ phê duyệt.');
       router.push('/hr/jobs');
     } catch (error) {

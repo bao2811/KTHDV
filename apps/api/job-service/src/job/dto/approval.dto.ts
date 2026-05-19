@@ -15,8 +15,8 @@ export class CreateApprovalDto {
 }
 
 export class RequestApprovalDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
   @IsInt()
-  @IsNotEmpty()
-  reviewerId: number;
+  @IsOptional()
+  reviewerId?: number;
 }
