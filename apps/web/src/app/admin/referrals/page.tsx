@@ -1,123 +1,198 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { adminService } from '@/services/admin.service';
 
-// --- MOCK DATA ---
-const mockReferrals = [
-  { id: 'ref-1', referrerName: 'Nguyễn Văn A', candidateName: 'Trần Thị B', jobTitle: 'Senior Frontend', status: 'PENDING_VERIFICATION', date: '08/05/2026', bonus: '5,000,000 VNĐ' },
-  { id: 'ref-2', referrerName: 'Lê Văn C', candidateName: 'Phạm Văn D', jobTitle: 'Backend Engineer', status: 'REWARDED', date: '01/05/2026', bonus: '10,000,000 VNĐ' },
-  { id: 'ref-3', referrerName: 'Nguyễn Văn A', candidateName: 'Lý Tiểu E', jobTitle: 'UI/UX Designer', status: 'REJECTED', date: '15/04/2026', bonus: '2,000,000 VNĐ' },
-];
+type ReferralRow = {
+  id: number;
+  status: 'PENDING' | 'VERIFIED' | 'SUSPICIOUS' | 'EXPIRED';
+  sentAt: string;
+  respondedAt?: string | null;
+  referrer: {
+    name?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    position?: string | null;
+    resume?: {
+      user?: {
+        email: string;
+        profile?: { fullName?: string | null } | null;
+        candidateProfile?: { fullName?: string | null; title?: string | null } | null;
+      };
+    };
+  };
+};
+
+const statusLabels: Record<ReferralRow['status'], string> = {
+  PENDING: 'Chờ xác minh',
+  VERIFIED: 'Đã xác minh',
+  SUSPICIOUS: 'Nghi ngờ',
+  EXPIRED: 'Hết hạn',
+};
 
 export default function AdminReferrals() {
-  const [referrals, setReferrals] = useState(mockReferrals);
+  const [referrals, setReferrals] = useState<ReferralRow[]>([]);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleVerify = (id: string, newStatus: string) => {
-    setReferrals(referrals.map(r => {
-      if (r.id === id) {
-        return { ...r, status: newStatus };
-      }
-      return r;
-    }));
+  const params = useMemo(
+    () => ({ page: 1, limit: 50, status: statusFilter || undefined }),
+    [statusFilter],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    adminService
+      .getReferrals(params)
+      .then((response) => {
+        if (!mounted) return;
+        setReferrals(response.data as ReferralRow[]);
+        setError('');
+      })
+      .catch(() => {
+        if (mounted) setError('Không tải được danh sách referral.');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  const updateReferral = async (id: number, status: ReferralRow['status']) => {
+    const previous = referrals;
+    setReferrals((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+    try {
+      await adminService.verifyReferral(id, { status });
+    } catch {
+      setReferrals(previous);
+      setError('Cập nhật referral thất bại.');
+    }
+  };
+
+  const summary = {
+    pending: referrals.filter((item) => item.status === 'PENDING').length,
+    verified: referrals.filter((item) => item.status === 'VERIFIED').length,
+    suspicious: referrals.filter((item) => item.status === 'SUSPICIOUS').length,
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Quản lý Giới thiệu (Referrals)</h1>
-        <p className="text-slate-500 mt-1">Duyệt và trao thưởng cho các lượt giới thiệu thành công.</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Quản lý referral</h1>
+          <p className="text-sm text-slate-500">Theo dõi và cập nhật trạng thái xác minh người tham chiếu.</p>
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+        >
+          <option value="">Tất cả trạng thái</option>
+          {Object.entries(statusLabels).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center">
-          <div className="p-4 bg-blue-50 text-blue-600 rounded-full mr-4">
-            <span className="material-symbols-outlined text-[28px]">pending_actions</span>
-          </div>
-          <div>
-            <h3 className="text-slate-500 text-sm font-bold">Chờ duyệt</h3>
-            <p className="text-2xl font-black text-slate-900">12</p>
-          </div>
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center">
-          <div className="p-4 bg-green-50 text-green-600 rounded-full mr-4">
-            <span className="material-symbols-outlined text-[28px]">payments</span>
-          </div>
-          <div>
-            <h3 className="text-slate-500 text-sm font-bold">Đã trao thưởng</h3>
-            <p className="text-2xl font-black text-slate-900">45</p>
-          </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-slate-500">Chờ xác minh</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{summary.pending}</p>
         </div>
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center">
-          <div className="p-4 bg-purple-50 text-purple-600 rounded-full mr-4">
-            <span className="material-symbols-outlined text-[28px]">account_balance_wallet</span>
-          </div>
-          <div>
-            <h3 className="text-slate-500 text-sm font-bold">Tổng chi phí</h3>
-            <p className="text-2xl font-black text-slate-900">240Tr VNĐ</p>
-          </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-slate-500">Đã xác minh</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{summary.verified}</p>
+        </div>
+        <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-sm font-semibold text-slate-500">Nghi ngờ</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900">{summary.suspicious}</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[900px]">
+          <table className="w-full min-w-[950px] border-collapse text-left">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Mã giới thiệu</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Người giới thiệu</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Ứng viên & Vị trí</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Ngày giới thiệu</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Tiền thưởng</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Trạng thái</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500 text-right">Thao tác</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Mã</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Người tham chiếu</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Ứng viên</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Gửi lúc</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Trạng thái</th>
+                <th className="px-6 py-4 text-right text-sm font-bold text-slate-500">Thao tác</th>
               </tr>
             </thead>
             <tbody>
-              {referrals.map((ref) => (
-                <tr key={ref.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td className="py-4 px-6 font-mono text-sm text-slate-500">{ref.id}</td>
-                  <td className="py-4 px-6 font-bold text-slate-900 text-sm">{ref.referrerName}</td>
-                  <td className="py-4 px-6">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-900 text-sm">{ref.candidateName}</span>
-                      <span className="text-xs text-slate-500">{ref.jobTitle}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-slate-600">{ref.date}</td>
-                  <td className="py-4 px-6 text-sm font-bold text-green-600">{ref.bonus}</td>
-                  <td className="py-4 px-6">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                      ref.status === 'REWARDED' ? 'bg-green-100 text-green-700' :
-                      ref.status === 'PENDING_VERIFICATION' ? 'bg-amber-100 text-amber-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {ref.status === 'REWARDED' ? 'Đã thưởng' : 
-                       ref.status === 'PENDING_VERIFICATION' ? 'Chờ duyệt' : 'Từ chối'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-right">
-                    {ref.status === 'PENDING_VERIFICATION' ? (
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => handleVerify(ref.id, 'REWARDED')}
-                          className="px-3 py-1.5 bg-green-50 text-green-600 hover:bg-green-100 font-bold text-xs rounded-md transition-colors"
-                        >
-                          Duyệt thưởng
-                        </button>
-                        <button 
-                          onClick={() => handleVerify(ref.id, 'REJECTED')}
-                          className="px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs rounded-md transition-colors"
-                        >
-                          Từ chối
-                        </button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">Đã xử lý</span>
-                    )}
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">Đang tải referral...</td>
                 </tr>
-              ))}
+              ) : referrals.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">Chưa có referral.</td>
+                </tr>
+              ) : (
+                referrals.map((referral) => {
+                  const candidate = referral.referrer.resume?.user;
+                  const candidateName =
+                    candidate?.candidateProfile?.fullName || candidate?.profile?.fullName || candidate?.email || '-';
+
+                  return (
+                    <tr key={referral.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="px-6 py-4 font-mono text-sm text-slate-500">#{referral.id}</td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-900">{referral.referrer.name || '-'}</div>
+                        <div className="text-xs text-slate-500">{referral.referrer.email || referral.referrer.phone || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="font-semibold text-slate-900">{candidateName}</div>
+                        <div className="text-xs text-slate-500">{candidate?.candidateProfile?.title || '-'}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        {new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(referral.sentAt))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700">
+                          {statusLabels[referral.status]}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => updateReferral(referral.id, 'VERIFIED')}
+                            className="rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+                          >
+                            Xác minh
+                          </button>
+                          <button
+                            onClick={() => updateReferral(referral.id, 'SUSPICIOUS')}
+                            className="rounded-md bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700 hover:bg-amber-100"
+                          >
+                            Nghi ngờ
+                          </button>
+                          <button
+                            onClick={() => updateReferral(referral.id, 'EXPIRED')}
+                            className="rounded-md bg-slate-100 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-200"
+                          >
+                            Hết hạn
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>

@@ -1,9 +1,12 @@
 import {
   Controller,
+  Delete,
   Get,
   Patch,
   Param,
   Body,
+  Post,
+  Put,
   Query,
   UseGuards,
   ParseIntPipe,
@@ -31,11 +34,15 @@ export class UsersController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('status') status?: string,
   ) {
     return this.usersService.findAll({
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
       search,
+      role,
+      status,
     });
   }
 
@@ -47,6 +54,62 @@ export class UsersController {
   @Roles('Admin')
   async findAllRoles() {
     return this.usersService.findAllRoles();
+  }
+
+  /**
+   * POST /api/users/roles
+   * Tao role moi (Admin only)
+   */
+  @Post('roles')
+  @Roles('Admin')
+  async createRole(@Body() body: { name: string; description?: string }) {
+    return this.usersService.createRole(body);
+  }
+
+  /**
+   * PATCH /api/users/roles/:id
+   * Cap nhat role (Admin only)
+   */
+  @Patch('roles/:id')
+  @Roles('Admin')
+  async updateRoleInfo(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { name?: string; description?: string },
+  ) {
+    return this.usersService.updateRoleInfo(id, body);
+  }
+
+  /**
+   * DELETE /api/users/roles/:id
+   * Xoa role neu chua co user (Admin only)
+   */
+  @Delete('roles/:id')
+  @Roles('Admin')
+  async deleteRole(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.deleteRole(id);
+  }
+
+  /**
+   * GET /api/users/permissions
+   * Danh sach permissions (Admin only)
+   */
+  @Get('permissions')
+  @Roles('Admin')
+  async findAllPermissions() {
+    return this.usersService.findAllPermissions();
+  }
+
+  /**
+   * PUT /api/users/roles/:id/permissions
+   * Gan lai permissions cho role (Admin only)
+   */
+  @Put('roles/:id/permissions')
+  @Roles('Admin')
+  async updateRolePermissions(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('permissionIds') permissionIds: number[],
+  ) {
+    return this.usersService.updateRolePermissions(id, permissionIds);
   }
 
   /**

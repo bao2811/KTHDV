@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AuditInterceptor } from './audit/audit.interceptor';
 import { ApplicationsModule } from './applications/applications.module';
 import { PipelineModule } from './pipeline/pipeline.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { PipelineModule } from './pipeline/pipeline.module';
     ProxyModule,
     ApplicationsModule,
     PipelineModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

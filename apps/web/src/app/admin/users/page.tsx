@@ -1,138 +1,196 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { adminService } from '@/services/admin.service';
+import type { AdminRole, AdminUser } from '@/types';
 
-// --- MOCK DATA ---
-const initialUsers = [
-  { id: '1', name: 'Nguyễn Văn A', role: 'CANDIDATE', email: 'a@example.com', phone: '0901234567', status: 'ACTIVE', lastLogin: '08/05/2026' },
-  { id: '2', name: 'Trần Thị B', role: 'HR', email: 'b@company.com', phone: '0912345678', status: 'ACTIVE', lastLogin: '08/05/2026' },
-  { id: '3', name: 'Lê Văn C', role: 'CANDIDATE', email: 'c@example.com', phone: '0987654321', status: 'INACTIVE', lastLogin: '01/05/2026' },
-  { id: '4', name: 'Phạm Thị D', role: 'ADMIN', email: 'admin@system.com', phone: '0999999999', status: 'ACTIVE', lastLogin: '08/05/2026' },
-];
+const statusLabels: Record<string, string> = {
+  ACTIVE: 'Hoạt động',
+  INACTIVE: 'Tạm khóa',
+  LOCKED: 'Đã khóa',
+};
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState<AdminUser[]>([]);
+  const [roles, setRoles] = useState<AdminRole[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'ALL' || user.role === roleFilter;
-    return matchesSearch && matchesRole;
-  });
+  const params = useMemo(
+    () => ({
+      page: 1,
+      limit: 50,
+      search: searchTerm || undefined,
+      role: roleFilter || undefined,
+      status: statusFilter || undefined,
+    }),
+    [roleFilter, searchTerm, statusFilter],
+  );
 
-  const handleToggleStatus = (id: string) => {
-    setUsers(users.map(u => {
-      if (u.id === id) {
-        return { ...u, status: u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' };
-      }
-      return u;
-    }));
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+
+    Promise.all([adminService.getUsers(params), adminService.getRoles()])
+      .then(([userResponse, roleResponse]) => {
+        if (!mounted) return;
+        setUsers(userResponse.data);
+        setRoles(roleResponse);
+        setError('');
+      })
+      .catch(() => {
+        if (mounted) setError('Không tải được danh sách người dùng.');
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [params]);
+
+  const updateStatus = async (user: AdminUser, status: AdminUser['status']) => {
+    const previous = users;
+    setUsers((items) => items.map((item) => (item.id === user.id ? { ...item, status } : item)));
+    try {
+      await adminService.updateUserStatus(user.id, status);
+    } catch {
+      setUsers(previous);
+      setError('Cập nhật trạng thái thất bại.');
+    }
+  };
+
+  const updateRole = async (user: AdminUser, roleId: number) => {
+    const role = roles.find((item) => item.id === roleId);
+    if (!role) return;
+
+    const previous = users;
+    setUsers((items) =>
+      items.map((item) => (item.id === user.id ? { ...item, role: { id: role.id, name: role.name } } : item)),
+    );
+    try {
+      await adminService.updateUserRole(user.id, roleId);
+    } catch {
+      setUsers(previous);
+      setError('Cập nhật vai trò thất bại.');
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Quản lý Người dùng</h1>
-          <p className="text-slate-500 mt-1">Xem, thêm, sửa, xóa và phân quyền người dùng.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Quản lý người dùng</h1>
+          <p className="text-sm text-slate-500">Tìm kiếm, lọc, đổi trạng thái và phân quyền người dùng.</p>
         </div>
-        <button className="px-4 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm flex items-center justify-center">
-          <span className="material-symbols-outlined text-[20px] mr-1.5">person_add</span>
-          Thêm người dùng
-        </button>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-        {/* Filters */}
-        <div className="p-4 border-b border-slate-100 flex flex-col sm:flex-row gap-4 justify-between items-center bg-slate-50">
-          <div className="relative w-full sm:w-64">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[20px]">search</span>
-            <input 
-              type="text" 
-              placeholder="Tìm theo tên, email..." 
-              className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm"
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 p-4 lg:flex-row">
+          <div className="relative flex-1">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">
+              search
+            </span>
+            <input
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Tìm theo tên hoặc email"
+              className="w-full rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
             />
           </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <select 
-              className="w-full sm:w-auto px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm bg-white"
-              value={roleFilter}
-              onChange={e => setRoleFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả vai trò</option>
-              <option value="CANDIDATE">Ứng viên</option>
-              <option value="HR">Nhà tuyển dụng</option>
-              <option value="ADMIN">Quản trị viên</option>
-            </select>
-          </div>
+          <select
+            value={roleFilter}
+            onChange={(event) => setRoleFilter(event.target.value)}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          >
+            <option value="">Tất cả vai trò</option>
+            {roles.map((role) => (
+              <option key={role.id} value={role.name}>{role.name}</option>
+            ))}
+          </select>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+          >
+            <option value="">Tất cả trạng thái</option>
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value}>{label}</option>
+            ))}
+          </select>
         </div>
 
-        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+          <table className="w-full min-w-[900px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-slate-200 bg-white">
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Tên & Email</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Số điện thoại</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Vai trò</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Trạng thái</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500">Đăng nhập cuối</th>
-                <th className="py-4 px-6 text-sm font-bold text-slate-500 text-right">Thao tác</th>
+              <tr className="border-b border-slate-200">
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Tên & Email</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Số điện thoại</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Vai trò</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Trạng thái</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Provider</th>
+                <th className="px-6 py-4 text-sm font-bold text-slate-500">Ngày tạo</th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                  <td className="py-4 px-6">
-                    <div className="flex flex-col">
-                      <span className="font-bold text-slate-900 text-sm">{user.name}</span>
-                      <span className="text-xs text-slate-500">{user.email}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-slate-600">{user.phone}</td>
-                  <td className="py-4 px-6">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full ${
-                      user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
-                      user.role === 'HR' ? 'bg-purple-100 text-purple-700' :
-                      'bg-blue-100 text-blue-700'
-                    }`}>
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6">
-                    <button 
-                      onClick={() => handleToggleStatus(user.id)}
-                      className={`text-[10px] font-bold px-2.5 py-1 rounded-full border transition-colors ${
-                        user.status === 'ACTIVE' 
-                        ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' 
-                        : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                      }`}
-                      title="Nhấn để đổi trạng thái"
-                    >
-                      {user.status === 'ACTIVE' ? 'Hoạt động' : 'Đã khóa'}
-                    </button>
-                  </td>
-                  <td className="py-4 px-6 text-sm text-slate-600">{user.lastLogin}</td>
-                  <td className="py-4 px-6 text-right space-x-2">
-                    <button className="p-1.5 text-slate-400 hover:text-primary hover:bg-indigo-50 rounded transition-colors" title="Chỉnh sửa">
-                      <span className="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
-                    <button className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Xóa">
-                      <span className="material-symbols-outlined text-[20px]">delete</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {filteredUsers.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
-                    Không tìm thấy người dùng nào phù hợp.
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
+                    Đang tải người dùng...
                   </td>
                 </tr>
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-sm text-slate-500">
+                    Không có người dùng phù hợp.
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="px-6 py-4">
+                      <div className="font-semibold text-slate-900">{user.profile?.fullName || user.email}</div>
+                      <div className="text-xs text-slate-500">{user.email}</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{user.profile?.phone || '-'}</td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={user.role.id}
+                        onChange={(event) => updateRole(user, Number(event.target.value))}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
+                      >
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.id}>{role.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4">
+                      <select
+                        value={user.status}
+                        onChange={(event) => updateStatus(user, event.target.value as AdminUser['status'])}
+                        className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
+                      >
+                        {Object.entries(statusLabels).map(([value, label]) => (
+                          <option key={value} value={value}>{label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-600">{user.provider}</td>
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {new Intl.DateTimeFormat('vi-VN').format(new Date(user.createdAt))}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

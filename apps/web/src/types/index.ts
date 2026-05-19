@@ -180,3 +180,94 @@ export interface ApiResponse<T> {
     totalPages: number;
   };
 }
+
+// ===========================
+// Admin Types
+// ===========================
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  provider: string;
+  createdAt: string;
+  updatedAt?: string;
+  role: {
+    id: number;
+    name: string;
+  };
+  profile?: {
+    fullName: string;
+    phone?: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface Permission {
+  id: number;
+  resource: string;
+  action: string;
+}
+
+export interface RolePermission {
+  id: number;
+  roleId: number;
+  permissionId: number;
+  permission: Permission;
+}
+
+export interface AdminRole {
+  id: number;
+  name: string;
+  description?: string;
+  permissions: RolePermission[];
+  _count?: {
+    users: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuditLog {
+  id: number;
+  userId?: number;
+  user?: {
+    id: number;
+    email: string;
+  };
+  action: string;
+  resource: string;
+  resourceId?: number;
+  details?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  timestamp: string;
+}
+
+export interface AdminStats {
+  totalUsers: number;
+  totalActiveJobs: number;
+  totalApplicationsThisMonth: number;
+  systemHealth: number;
+  growth: {
+    users: number;
+    jobs: number;
+    applications: number;
+  };
+}
+
+export interface DashboardChartData {
+  month: string;
+  newUsers: number;
+  applications: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}

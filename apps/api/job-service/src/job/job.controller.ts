@@ -172,6 +172,19 @@ export class JobController {
     return this.jobService.updateJob(id, body);
   }
 
+  @Patch('jobs/:id/close')
+  closeJob(@Param('id', ParseIntPipe) id: number) {
+    return this.jobService.closeJob(id);
+  }
+
+  @Patch('jobs/:id/extend')
+  extendJob(
+    @Param('id', ParseIntPipe) id: number,
+    @Body('expiredAt') expiredAt: string,
+  ) {
+    return this.jobService.extendJob(id, expiredAt);
+  }
+
   @Delete('jobs/:id')
   deleteJob(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteJob(id);
@@ -185,6 +198,15 @@ export class JobController {
   @Get('jobs/:id/approvals')
   getApprovals(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getApprovals(id);
+  }
+
+  @Patch('jobs/:jobId/approvals/:approvalId')
+  reviewApproval(
+    @Param('jobId', ParseIntPipe) jobId: number,
+    @Param('approvalId', ParseIntPipe) approvalId: number,
+    @Body() body: any,
+  ) {
+    return this.jobService.reviewApproval(jobId, approvalId, body);
   }
 
   // Job Skills
