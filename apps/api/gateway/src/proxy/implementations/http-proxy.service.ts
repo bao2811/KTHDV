@@ -121,7 +121,7 @@ export class HttpProxyService implements IServiceProxy {
       const response = await firstValueFrom(
         this.httpService.get(url, mergedConfig),
       );
-      return response.data;
+      return response;
     } catch (error: any) {
       this.handleError(error, 'STREAM');
     }

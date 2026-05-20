@@ -6,14 +6,7 @@ import {
 } from '@nestjs/common';
 import {
   ApplicationStatus,
-  Company,
   Job,
-  Location,
-  JobCategory,
-  Skill,
-  JobApproval,
-  JobSkill,
-  HardFilter,
   JobStatus,
   ApprovalStatus,
 } from '@prisma/client';
@@ -85,8 +78,8 @@ export class JobService {
   // Locations
   createLocation(data: { city: string; district?: string; address?: string }) {
     const { city, district, address } = data;
-    return this.prisma.location.create({ 
-      data: { city, district, address } 
+    return this.prisma.location.create({
+      data: { city, district, address },
     });
   }
 
@@ -108,9 +101,9 @@ export class JobService {
   ) {
     await this.getLocation(id);
     const { city, district, address } = data;
-    return this.prisma.location.update({ 
-      where: { id }, 
-      data: { city, district, address } 
+    return this.prisma.location.update({
+      where: { id },
+      data: { city, district, address },
     });
   }
 
@@ -128,8 +121,8 @@ export class JobService {
   // Categories
   createCategory(data: { name: string; parentId?: number }) {
     const { name, parentId } = data;
-    return this.prisma.jobCategory.create({ 
-      data: { name, parentId } 
+    return this.prisma.jobCategory.create({
+      data: { name, parentId },
     });
   }
 
@@ -153,9 +146,9 @@ export class JobService {
   ) {
     await this.getCategory(id);
     const { name, parentId } = data;
-    return this.prisma.jobCategory.update({ 
-      where: { id }, 
-      data: { name, parentId } 
+    return this.prisma.jobCategory.update({
+      where: { id },
+      data: { name, parentId },
     });
   }
 
@@ -176,8 +169,8 @@ export class JobService {
   // Skills
   createSkill(data: { name: string; category?: string }) {
     const { name, category } = data;
-    return this.prisma.skill.create({ 
-      data: { name, category }
+    return this.prisma.skill.create({
+      data: { name, category },
     });
   }
 
@@ -257,8 +250,14 @@ export class JobService {
     data: CreateJobDto & { createdByUserId?: number; createdByRole?: any },
   ): Promise<Job> {
     // BR-1.5: salaryMin <= salaryMax; experienceYears >= 0
-    if (data.salaryMin !== undefined && data.salaryMax !== undefined && data.salaryMin > data.salaryMax) {
-      throw new BadRequestException('salaryMin phải nhỏ hơn hoặc bằng salaryMax');
+    if (
+      data.salaryMin !== undefined &&
+      data.salaryMax !== undefined &&
+      data.salaryMin > data.salaryMax
+    ) {
+      throw new BadRequestException(
+        'salaryMin phải nhỏ hơn hoặc bằng salaryMax',
+      );
     }
     if (data.experienceYears !== undefined && data.experienceYears < 0) {
       throw new BadRequestException('experienceYears phải lớn hơn hoặc bằng 0');
@@ -272,7 +271,7 @@ export class JobService {
         'HR không có quyền đăng tin trực tiếp. Vui lòng gửi yêu cầu phê duyệt.',
       );
     }
-    
+
     const job = await this.prisma.$transaction(async (tx) => {
       const newJob = await tx.job.create({
         data: {
@@ -287,7 +286,8 @@ export class JobService {
           locationId: this.normalizeOptionalId(data.locationId),
           createdByUserId: data.createdByUserId,
           status: initialStatus,
-          publishedAt: initialStatus === JobStatus.ACTIVE ? new Date() : undefined,
+          publishedAt:
+            initialStatus === JobStatus.ACTIVE ? new Date() : undefined,
           expiredAt: data.expiredAt ? new Date(data.expiredAt) : undefined,
         },
       });
@@ -299,7 +299,7 @@ export class JobService {
           data: {
             jobId: newJob.id,
             reviewerId: reviewer.id,
-            status: ApprovalStatus.PENDING,
+            status: 'PENDING' as any,
           },
         });
       }
@@ -318,7 +318,15 @@ export class JobService {
     return job;
   }
 
-  async listJobs(params: JobQueryDto): Promise<{ data: any[]; pagination: { page: number; limit: number; total: number; totalPages: number } }> {
+  async listJobs(params: JobQueryDto): Promise<{
+    data: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
@@ -345,8 +353,10 @@ export class JobService {
     }
 
     if (params.salaryMin !== undefined || params.salaryMax !== undefined) {
-      where.salaryMin = params.salaryMin !== undefined ? { gte: params.salaryMin } : undefined;
-      where.salaryMax = params.salaryMax !== undefined ? { lte: params.salaryMax } : undefined;
+      where.salaryMin =
+        params.salaryMin !== undefined ? { gte: params.salaryMin } : undefined;
+      where.salaryMax =
+        params.salaryMax !== undefined ? { lte: params.salaryMax } : undefined;
     }
 
     const [data, total] = await Promise.all([
@@ -396,22 +406,26 @@ export class JobService {
     return job;
   }
 
-  async updateJob(
-    id: number,
-    data: UpdateJobDto,
-    user?: any
-  ) {
+  async updateJob(id: number, data: UpdateJobDto, user?: any) {
     const existingJob = await this.getJob(id);
     const roleName = this.getRoleName(user?.role);
-    
+
     // Governance: HR cannot activate jobs directly
     if (roleName === 'HR' && data.status === JobStatus.ACTIVE) {
-      throw new ForbiddenException('HR không có quyền trực tiếp đăng tin. Vui lòng chuyển sang trạng thái PENDING để yêu cầu duyệt.');
+      throw new ForbiddenException(
+        'HR không có quyền trực tiếp đăng tin. Vui lòng chuyển sang trạng thái PENDING để yêu cầu duyệt.',
+      );
     }
 
     // BR-1.5 validation
-    if (data.salaryMin !== undefined && data.salaryMax !== undefined && data.salaryMin > data.salaryMax) {
-      throw new BadRequestException('salaryMin phải nhỏ hơn hoặc bằng salaryMax');
+    if (
+      data.salaryMin !== undefined &&
+      data.salaryMax !== undefined &&
+      data.salaryMin > data.salaryMax
+    ) {
+      throw new BadRequestException(
+        'salaryMin phải nhỏ hơn hoặc bằng salaryMax',
+      );
     }
 
     const job = await this.prisma.$transaction(async (tx) => {
@@ -437,13 +451,16 @@ export class JobService {
       });
 
       // If status changed to PENDING, create approval record if it doesn't exist or is not pending
-      if (data.status === JobStatus.PENDING && existingJob.status !== JobStatus.PENDING) {
+      if (
+        data.status === JobStatus.PENDING &&
+        existingJob.status !== JobStatus.PENDING
+      ) {
         const reviewer = await this.findReviewer(tx);
         await tx.jobApproval.create({
           data: {
             jobId: id,
             reviewerId: reviewer.id,
-            status: ApprovalStatus.PENDING,
+            status: 'PENDING' as any,
           },
         });
       }
@@ -465,14 +482,18 @@ export class JobService {
   async deleteJob(id: number) {
     const job = await this.getJob(id);
     if (job.status !== JobStatus.DRAFT) {
-      throw new BadRequestException('Chỉ có thể xóa tin tuyển dụng ở trạng thái DRAFT');
+      throw new BadRequestException(
+        'Chỉ có thể xóa tin tuyển dụng ở trạng thái DRAFT',
+      );
     }
 
     const applicationCount = await this.prisma.application.count({
       where: { jobId: id },
     });
     if (applicationCount > 0) {
-      throw new BadRequestException('Không thể xóa tin đã có ứng viên. Vui lòng đóng tin.');
+      throw new BadRequestException(
+        'Không thể xóa tin đã có ứng viên. Vui lòng đóng tin.',
+      );
     }
 
     return this.prisma.job.delete({ where: { id } });
@@ -484,7 +505,7 @@ export class JobService {
     if (job.status === JobStatus.CLOSED) {
       throw new BadRequestException('Công việc đã được đóng trước đó');
     }
-    
+
     if (![JobStatus.ACTIVE, JobStatus.EXPIRED].includes(job.status)) {
       throw new BadRequestException(
         'Chi co the dong tin dang hoat dong hoac da het han',
@@ -521,7 +542,7 @@ export class JobService {
     if (newExpiredAt <= new Date()) {
       throw new BadRequestException('Ngày hết hạn phải ở tương lai');
     }
-    
+
     // BR-1.2: HR có thể gia hạn (tạo mới expiredAt)
     if (![JobStatus.ACTIVE, JobStatus.EXPIRED].includes(job.status)) {
       throw new BadRequestException(
@@ -531,9 +552,10 @@ export class JobService {
 
     const updatedJob = await this.prisma.job.update({
       where: { id },
-      data: { 
+      data: {
         expiredAt: newExpiredAt,
-        status: job.status === JobStatus.EXPIRED ? JobStatus.ACTIVE : job.status,
+        status:
+          job.status === JobStatus.EXPIRED ? JobStatus.ACTIVE : job.status,
       },
     });
 
@@ -550,10 +572,12 @@ export class JobService {
   // Approvals
   async requestApproval(jobId: number, reviewerId?: number) {
     const job = await this.getJob(jobId);
-    
+
     // BR-1.1: Job phải được phê duyệt (Approved) trước khi chuyển sang ACTIVE
     if (job.status !== JobStatus.DRAFT) {
-      throw new BadRequestException('Chỉ có thể gửi yêu cầu phê duyệt cho tin ở trạng thái DRAFT');
+      throw new BadRequestException(
+        'Chỉ có thể gửi yêu cầu phê duyệt cho tin ở trạng thái DRAFT',
+      );
     }
 
     // Check if there is already a pending approval
@@ -561,7 +585,9 @@ export class JobService {
       where: { jobId, status: 'PENDING' as any },
     });
     if (existingPending) {
-      throw new BadRequestException('Yêu cầu phê duyệt cho tin này đang được xử lý');
+      throw new BadRequestException(
+        'Yêu cầu phê duyệt cho tin này đang được xử lý',
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {
@@ -590,7 +616,11 @@ export class JobService {
     });
   }
 
-  async updateApproval(jobId: number, approvalId: number, data: CreateApprovalDto) {
+  async updateApproval(
+    jobId: number,
+    approvalId: number,
+    data: CreateApprovalDto,
+  ) {
     const approval = await this.prisma.jobApproval.findUnique({
       where: { id: approvalId },
     });
@@ -599,7 +629,7 @@ export class JobService {
       throw new NotFoundException('Approval record not found');
     }
 
-    if (approval.status !== 'PENDING') {
+    if ((approval.status as any) !== 'PENDING') {
       throw new BadRequestException('Yêu cầu này đã được xử lý');
     }
 
@@ -617,7 +647,7 @@ export class JobService {
       if (data.status === ApprovalStatus.APPROVED) {
         await tx.job.update({
           where: { id: jobId },
-          data: { 
+          data: {
             status: JobStatus.ACTIVE,
             publishedAt: new Date(),
           },
@@ -652,26 +682,23 @@ export class JobService {
   async getAllApprovals() {
     return this.prisma.jobApproval.findMany({
       where: { status: 'PENDING' as any },
-      include: { 
+      include: {
         job: {
           include: {
             company: true,
             category: true,
             location: true,
-            createdBy: true
-          }
+            createdBy: true,
+          },
         },
-        reviewer: true
+        reviewer: true,
       },
-      orderBy: { id: 'desc' }
+      orderBy: { id: 'desc' },
     });
   }
 
   // Job Skills Management
-  async addJobSkill(
-    jobId: number,
-    data: AddJobSkillDto,
-  ) {
+  async addJobSkill(jobId: number, data: AddJobSkillDto) {
     await this.getJob(jobId);
     return this.prisma.jobSkill.upsert({
       where: { jobId_skillId: { jobId, skillId: data.skillId } },
@@ -728,7 +755,9 @@ export class JobService {
   }
 
   async removeHardFilter(id: number) {
-    const hardFilter = await this.prisma.hardFilter.findUnique({ where: { id } });
+    const hardFilter = await this.prisma.hardFilter.findUnique({
+      where: { id },
+    });
     if (!hardFilter) {
       throw new NotFoundException('Hard filter khong ton tai');
     }
@@ -764,13 +793,13 @@ export class JobService {
         skip,
         take: limit,
         include: {
-          candidate: { 
-            include: { 
+          candidate: {
+            include: {
               profile: true,
               candidateProfile: {
-                include: { experiences: true, educations: true }
-              }
-            } 
+                include: { experiences: true, educations: true },
+              },
+            },
           },
           resume: true,
           matchResult: true,
