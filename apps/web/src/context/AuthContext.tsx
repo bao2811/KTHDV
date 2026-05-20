@@ -14,7 +14,13 @@ import { authService } from "@/services/auth.service";
 interface User {
   id: number;
   email: string;
-  role: string | any;
+  role:
+    | string
+    | {
+        id?: number;
+        name?: string;
+        permissions?: Array<{ resource: string; action: string }>;
+      };
   fullName?: string;
   profile?: any;
   candidateProfile?: any;
@@ -30,6 +36,7 @@ interface AuthContextType {
   isCandidate: boolean;
   refreshUser: () => Promise<void>;
   getRoleName: (role: any) => string;
+  hasPermission: (resource: string, action?: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -106,6 +113,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     getRoleName(user?.role) === "Admin" || getRoleName(user?.role) === "HR";
   const isCandidate = getRoleName(user?.role) === "Candidate";
 
+  const hasPermission = (resource: string, action = "read") => {
+    const roleName = getRoleName(user?.role);
+    if (roleName === "Admin") return true;
+    if (!user?.role || typeof user.role === "string") return false;
+
+    return (
+      user.role.permissions?.some(
+        (permission) =>
+          permission.resource === resource && permission.action === action,
+      ) || false
+    );
+  };
+
   const refreshUser = async () => {
     try {
       const userData = await authService.getMe();
@@ -128,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isCandidate,
         refreshUser,
         getRoleName,
+        hasPermission,
       }}
     >
       {children}

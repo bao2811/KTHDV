@@ -359,7 +359,7 @@ export const adminService = {
 
   /** Hủy lịch phỏng vấn (BR-4.3) */
   async cancelInterview(id: number | string): Promise<Interview> {
-    const response = await api.patch(API_ROUTES.ADMIN.INTERVIEW_CANCEL(id));
+    const response = await api.delete(API_ROUTES.ADMIN.INTERVIEW_CANCEL(id));
     return response.data;
   },
 

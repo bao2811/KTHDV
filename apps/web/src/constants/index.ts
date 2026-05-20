@@ -16,19 +16,25 @@ export const API_ROUTES = {
     SKILLS: "/jobs/skills",
     JOB_SKILLS: (jobId: number | string) => `/jobs/postings/${jobId}/skills`,
     SKILLS_SUB: (jobId: number | string) => `/jobs/postings/${jobId}/skills`,
-    HARD_FILTERS: (jobId: number | string) => `/jobs/postings/${jobId}/hard-filters`,
+    HARD_FILTERS: (jobId: number | string) =>
+      `/jobs/postings/${jobId}/hard-filters`,
     REMOVE_HARD_FILTER: (id: number | string) => `/jobs/hard-filters/${id}`,
-    JOB_APPLICATIONS: (jobId: number | string) => `/jobs/postings/${jobId}/applications`,
-    APPLICATIONS: (jobId: number | string) => `/jobs/postings/${jobId}/applications`,
-    JOB_STATISTICS: (jobId: number | string) => `/jobs/postings/${jobId}/statistics`,
-    STATISTICS: (jobId: number | string) => `/jobs/postings/${jobId}/statistics`,
+    JOB_APPLICATIONS: (jobId: number | string) =>
+      `/jobs/postings/${jobId}/applications`,
+    APPLICATIONS: (jobId: number | string) =>
+      `/jobs/postings/${jobId}/applications`,
+    JOB_STATISTICS: (jobId: number | string) =>
+      `/jobs/postings/${jobId}/statistics`,
+    STATISTICS: (jobId: number | string) =>
+      `/jobs/postings/${jobId}/statistics`,
     CLOSE: (jobId: number | string) => `/jobs/postings/${jobId}/close`,
     EXTEND: (jobId: number | string) => `/jobs/postings/${jobId}/extend`,
     APPROVALS: (jobId: number | string) => `/jobs/postings/${jobId}/approvals`,
     APPROVE: (jobId: number | string, approvalId: number | string) =>
       `/jobs/postings/${jobId}/approvals/${approvalId}`,
     ALL_APPROVALS: "/jobs/approvals",
-    UPDATE_APPLICATION_STATUS: (applicationId: number | string) => `/jobs/applications/${applicationId}/status`,
+    UPDATE_APPLICATION_STATUS: (applicationId: number | string) =>
+      `/jobs/applications/${applicationId}/status`,
   },
   CANDIDATES: {
     PROFILES: "/candidates/profiles",
@@ -76,8 +82,10 @@ export const API_ROUTES = {
     JOB_CLOSE: (id: number | string) => `/jobs/postings/${id}/close`,
     JOB_EXTEND: (id: number | string) => `/jobs/postings/${id}/extend`,
     JOB_APPROVALS: (id: number | string) => `/jobs/postings/${id}/approvals`,
-    JOB_APPROVAL_ACTION: (jobId: number | string, approvalId: number | string) =>
-      `/jobs/postings/${jobId}/approvals/${approvalId}`,
+    JOB_APPROVAL_ACTION: (
+      jobId: number | string,
+      approvalId: number | string,
+    ) => `/jobs/postings/${jobId}/approvals/${approvalId}`,
     COMPANIES: "/jobs/companies",
     COMPANY_DETAIL: (id: number | string) => `/jobs/companies/${id}`,
     CATEGORIES: "/jobs/categories",
@@ -89,7 +97,8 @@ export const API_ROUTES = {
     APPLICATIONS_ALL: "/applications",
     APPLICATION_STATUS: (id: number | string) => `/applications/${id}/status`,
     INTERVIEWS_ALL: "/interviews/list",
-    INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}/cancel`,
+    INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}`,
+    // Referrals
     REFERRALS: "/admin/referrals",
     REFERRAL_VERIFY: (id: number | string) => `/admin/referrals/${id}/verify`,
   },

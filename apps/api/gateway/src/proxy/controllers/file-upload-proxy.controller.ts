@@ -104,6 +104,34 @@ export class FileUploadProxyController {
     );
   }
 
+  @Post('company-logo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadCompanyLogo(
+    @Request() req: any,
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    const formData = new FormData();
+    formData.append('file', file.buffer, {
+      filename: originalname,
+      contentType: file.mimetype,
+    });
+    formData.append('userId', userId.toString());
+
+    return this.proxy.post(
+      `${CANDIDATE_SERVICE_URL}/upload/company-logo`,
+      formData,
+      {
+        headers: {
+          ...getAuthConfig(req).headers,
+          ...formData.getHeaders(),
+        },
+      },
+    );
+  }
+
   @Get('my-cvs')
   async getMyCVs(@Request() req: any) {
     return this.proxy.get(
