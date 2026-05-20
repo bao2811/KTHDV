@@ -303,4 +303,27 @@ export class UsersService {
       },
     });
   }
+  /**
+   * Get all potential job reviewers (Admin, Manager)
+   */
+  async findReviewers() {
+    return this.prisma.user.findMany({
+      where: {
+        role: {
+          name: { in: ['Admin', 'Manager'] },
+        },
+        status: 'ACTIVE',
+      },
+      select: {
+        id: true,
+        email: true,
+        profile: {
+          select: { fullName: true },
+        },
+        role: {
+          select: { name: true },
+        },
+      },
+    });
+  }
 }

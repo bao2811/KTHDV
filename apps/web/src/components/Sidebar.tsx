@@ -31,6 +31,10 @@ const getNavItems = (role: string): NavItem[] => {
     case 'admin':
       return [
         { label: 'Bảng điều khiển', href: '/admin', icon: 'dashboard' },
+        { label: 'Duyệt tin', href: '/admin/jobs/approvals', icon: 'fact_check' },
+        { label: 'Tin tuyển dụng', href: '/admin/jobs', icon: 'work' },
+        { label: 'Công ty', href: '/admin/companies', icon: 'domain' },
+        { label: 'Dữ liệu gốc', href: '/admin/master-data', icon: 'database' },
         { label: 'Người dùng', href: '/admin/users', icon: 'manage_accounts' },
         { label: 'Referral', href: '/admin/referrals', icon: 'how_to_reg' },
         { label: 'Cài đặt hệ thống', href: '/admin/settings', icon: 'settings' },

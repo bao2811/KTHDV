@@ -15,8 +15,20 @@ export const API_ROUTES = {
     LOCATIONS: "/jobs/locations",
     SKILLS: "/jobs/skills",
     JOB_SKILLS: (jobId: number | string) => `/jobs/postings/${jobId}/skills`,
+    SKILLS_SUB: (jobId: number | string) => `/jobs/postings/${jobId}/skills`,
+    HARD_FILTERS: (jobId: number | string) => `/jobs/postings/${jobId}/hard-filters`,
+    REMOVE_HARD_FILTER: (id: number | string) => `/jobs/hard-filters/${id}`,
     JOB_APPLICATIONS: (jobId: number | string) => `/jobs/postings/${jobId}/applications`,
+    APPLICATIONS: (jobId: number | string) => `/jobs/postings/${jobId}/applications`,
     JOB_STATISTICS: (jobId: number | string) => `/jobs/postings/${jobId}/statistics`,
+    STATISTICS: (jobId: number | string) => `/jobs/postings/${jobId}/statistics`,
+    CLOSE: (jobId: number | string) => `/jobs/postings/${jobId}/close`,
+    EXTEND: (jobId: number | string) => `/jobs/postings/${jobId}/extend`,
+    APPROVALS: (jobId: number | string) => `/jobs/postings/${jobId}/approvals`,
+    APPROVE: (jobId: number | string, approvalId: number | string) =>
+      `/jobs/postings/${jobId}/approvals/${approvalId}`,
+    ALL_APPROVALS: "/jobs/approvals",
+    UPDATE_APPLICATION_STATUS: (applicationId: number | string) => `/jobs/applications/${applicationId}/status`,
   },
   CANDIDATES: {
     PROFILES: "/candidates/profiles",
@@ -43,30 +55,29 @@ export const API_ROUTES = {
   PIPELINE: {
     STAGES: "/pipeline-stages",
   },
+  MATCHES: {
+    RUN: "/matches/run",
+    LIST: "/matches/list",
+    DETAILS: (applicationId: number | string) => `/matches/${applicationId}`,
+  },
   ADMIN: {
-    // Stats & Dashboard
     STATS: "/admin/stats",
     DASHBOARD_CHART: "/admin/dashboard-chart",
-    // Users
     USERS: "/users",
     USER_DETAIL: (id: number | string) => `/users/${id}`,
     USER_STATUS: (id: number | string) => `/users/${id}/status`,
     USER_ROLE: (id: number | string) => `/users/${id}/role`,
-    // Roles & Permissions
     ROLES: "/users/roles",
     ROLE_DETAIL: (id: number | string) => `/users/roles/${id}`,
     ROLE_PERMISSIONS: (id: number | string) => `/users/roles/${id}/permissions`,
     PERMISSIONS: "/users/permissions",
-    // Audit Logs
     AUDIT_LOGS: "/admin/audit-logs",
-    // Jobs (admin view — reuses job-service proxy)
     JOBS_ALL: "/jobs/postings",
     JOB_CLOSE: (id: number | string) => `/jobs/postings/${id}/close`,
     JOB_EXTEND: (id: number | string) => `/jobs/postings/${id}/extend`,
     JOB_APPROVALS: (id: number | string) => `/jobs/postings/${id}/approvals`,
     JOB_APPROVAL_ACTION: (jobId: number | string, approvalId: number | string) =>
       `/jobs/postings/${jobId}/approvals/${approvalId}`,
-    // Master Data
     COMPANIES: "/jobs/companies",
     COMPANY_DETAIL: (id: number | string) => `/jobs/companies/${id}`,
     CATEGORIES: "/jobs/categories",
@@ -75,13 +86,10 @@ export const API_ROUTES = {
     LOCATION_DETAIL: (id: number | string) => `/jobs/locations/${id}`,
     SKILLS: "/jobs/skills",
     SKILL_DETAIL: (id: number | string) => `/jobs/skills/${id}`,
-    // Applications (admin cross-job view)
     APPLICATIONS_ALL: "/applications",
     APPLICATION_STATUS: (id: number | string) => `/applications/${id}/status`,
-    // Interviews (admin view)
     INTERVIEWS_ALL: "/interviews/list",
     INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}/cancel`,
-    // Referrals
     REFERRALS: "/admin/referrals",
     REFERRAL_VERIFY: (id: number | string) => `/admin/referrals/${id}/verify`,
   },
@@ -103,6 +111,7 @@ export const JOB_TYPE_LABELS: Record<string, string> = {
 
 export const APPLICATION_STATUS = {
   SUBMITTED: "SUBMITTED",
+  SCREENING: "SCREENING",
   MATCHED: "MATCHED",
   INTERVIEWING: "INTERVIEWING",
   OFFERED: "OFFERED",
@@ -111,6 +120,7 @@ export const APPLICATION_STATUS = {
 
 export const APPLICATION_STATUS_LABELS: Record<string, string> = {
   SUBMITTED: "Đã nộp",
+  SCREENING: "Sàng lọc",
   MATCHED: "Đã so khớp",
   INTERVIEWING: "Đang phỏng vấn",
   OFFERED: "Đã đề nghị",

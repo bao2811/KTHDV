@@ -232,15 +232,9 @@ export class JobProxyController {
   // Job Postings
   @Post('postings')
   async createJob(@Request() req: any, @Body() body: any) {
-    // Inject current user ID as creator
-    const payload = {
-      ...body,
-      createdByUserId: req.user.id,
-    };
-    
     return this.proxy.post(
-      `${JOB_SERVICE_URL}/jobs/jobs`,
-      payload,
+      `${JOB_SERVICE_URL}/jobs`,
+      body,
       getAuthConfig(req),
     );
   }
@@ -249,14 +243,14 @@ export class JobProxyController {
   @Get('postings')
   async getJobs(
     @Request() req: any,
-    @Query('status') status?: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
+    @Query() query: Record<string, string | number | undefined>,
   ) {
-    const url = new URL(`${JOB_SERVICE_URL}/jobs/jobs`);
-    if (status) url.searchParams.append('status', status);
-    if (page) url.searchParams.append('page', page.toString());
-    if (limit) url.searchParams.append('limit', limit.toString());
+    const url = new URL(`${JOB_SERVICE_URL}/jobs`);
+    Object.entries(query).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.append(key, value.toString());
+      }
+    });
     return this.proxy.get(url.toString(), getAuthConfig(req));
   }
 
@@ -264,7 +258,7 @@ export class JobProxyController {
   @Get('postings/:id')
   async getJob(@Request() req: any, @Param('id') id: number) {
     return this.proxy.get(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}`,
+      `${JOB_SERVICE_URL}/jobs/${id}`,
       getAuthConfig(req),
     );
   }
@@ -276,29 +270,7 @@ export class JobProxyController {
     @Body() body: any,
   ) {
     return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}`,
-      body,
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:id/close')
-  async closeJob(@Request() req: any, @Param('id') id: number) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}/close`,
-      {},
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:id/extend')
-  async extendJob(
-    @Request() req: any,
-    @Param('id') id: number,
-    @Body() body: { expiredAt: string },
-  ) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}/extend`,
+      `${JOB_SERVICE_URL}/jobs/${id}`,
       body,
       getAuthConfig(req),
     );
@@ -307,7 +279,64 @@ export class JobProxyController {
   @Delete('postings/:id')
   async deleteJob(@Request() req: any, @Param('id') id: number) {
     return this.proxy.delete(
-      `${JOB_SERVICE_URL}/jobs/jobs/${id}`,
+      `${JOB_SERVICE_URL}/jobs/${id}`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('postings/:id/close')
+  async closeJob(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/${id}/close`,
+      {},
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('postings/:id/extend')
+  async extendJob(@Request() req: any, @Param('id') id: number, @Body() body: any) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/${id}/extend`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Post('postings/:id/approvals')
+  async requestApproval(@Request() req: any, @Param('id') id: number, @Body() body: any) {
+    return this.proxy.post(
+      `${JOB_SERVICE_URL}/jobs/${id}/approvals`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('postings/:id/approvals/:approvalId')
+  async approveJob(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Param('approvalId') approvalId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/${id}/approvals/${approvalId}`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('postings/:id/approvals')
+  async getApprovals(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.get(
+      `${JOB_SERVICE_URL}/jobs/${id}/approvals`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('approvals')
+  async getPendingApprovals(@Request() req: any) {
+    return this.proxy.get(
+      `${JOB_SERVICE_URL}/jobs/approvals`,
       getAuthConfig(req),
     );
   }
@@ -359,7 +388,7 @@ export class JobProxyController {
     @Body() body: any,
   ) {
     return this.proxy.post(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/skills`,
+      `${JOB_SERVICE_URL}/jobs/${jobId}/skills`,
       body,
       getAuthConfig(req),
     );
@@ -368,21 +397,7 @@ export class JobProxyController {
   @Get('postings/:jobId/skills')
   async getJobSkills(@Request() req: any, @Param('jobId') jobId: number) {
     return this.proxy.get(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/skills`,
-      getAuthConfig(req),
-    );
-  }
-
-  @Patch('postings/:jobId/approvals/:approvalId')
-  async reviewJobApproval(
-    @Request() req: any,
-    @Param('jobId') jobId: number,
-    @Param('approvalId') approvalId: number,
-    @Body() body: any,
-  ) {
-    return this.proxy.patch(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/approvals/${approvalId}`,
-      body,
+      `${JOB_SERVICE_URL}/jobs/${jobId}/skills`,
       getAuthConfig(req),
     );
   }
@@ -394,7 +409,7 @@ export class JobProxyController {
     @Param('skillId') skillId: number,
   ) {
     return this.proxy.delete(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/skills/${skillId}`,
+      `${JOB_SERVICE_URL}/jobs/${jobId}/skills/${skillId}`,
       getAuthConfig(req),
     );
   }
@@ -408,7 +423,7 @@ export class JobProxyController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ) {
-    const url = new URL(`${JOB_SERVICE_URL}/jobs/jobs/${jobId}/applications`);
+    const url = new URL(`${JOB_SERVICE_URL}/jobs/${jobId}/applications`);
     if (status) url.searchParams.append('status', status);
     if (page) url.searchParams.append('page', page.toString());
     if (limit) url.searchParams.append('limit', limit.toString());
@@ -418,7 +433,50 @@ export class JobProxyController {
   @Get('postings/:jobId/statistics')
   async getJobStatistics(@Request() req: any, @Param('jobId') jobId: number) {
     return this.proxy.get(
-      `${JOB_SERVICE_URL}/jobs/jobs/${jobId}/statistics`,
+      `${JOB_SERVICE_URL}/jobs/${jobId}/statistics`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Patch('applications/:id/status')
+  async updateApplicationStatus(
+    @Request() req: any,
+    @Param('id') id: number,
+    @Body('status') status: string,
+  ) {
+    return this.proxy.patch(
+      `${JOB_SERVICE_URL}/jobs/applications/${id}/status`,
+      { status },
+      getAuthConfig(req),
+    );
+  }
+
+  // Hard Filters
+  @Post('postings/:jobId/hard-filters')
+  async addHardFilter(
+    @Request() req: any,
+    @Param('jobId') jobId: number,
+    @Body() body: any,
+  ) {
+    return this.proxy.post(
+      `${JOB_SERVICE_URL}/jobs/${jobId}/hard-filters`,
+      body,
+      getAuthConfig(req),
+    );
+  }
+
+  @Get('postings/:jobId/hard-filters')
+  async listHardFilters(@Request() req: any, @Param('jobId') jobId: number) {
+    return this.proxy.get(
+      `${JOB_SERVICE_URL}/jobs/${jobId}/hard-filters`,
+      getAuthConfig(req),
+    );
+  }
+
+  @Delete('hard-filters/:id')
+  async removeHardFilter(@Request() req: any, @Param('id') id: number) {
+    return this.proxy.delete(
+      `${JOB_SERVICE_URL}/jobs/hard-filters/${id}`,
       getAuthConfig(req),
     );
   }

@@ -52,6 +52,8 @@ export function useJobs(initialParams: any = {}) {
     setParams((prev: any) => ({ ...prev, page }));
   };
 
+  const refresh = () => fetchJobs(params);
+
   return { 
     jobs: data.data, 
     pagination: data.pagination, 
@@ -59,6 +61,7 @@ export function useJobs(initialParams: any = {}) {
     error, 
     updateFilters, 
     setPage,
+    refresh,
     params 
   };
 }
