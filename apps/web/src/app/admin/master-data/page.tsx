@@ -1,243 +1,469 @@
-'use client';
+"use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { adminService } from "@/services/admin.service";
+import type { JobCategory, Location, Skill } from "@/types";
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { jobService } from '@/services/job.service';
+type MasterKind = "locations" | "categories" | "skills";
+type MasterItem = Location | JobCategory | Skill;
+type MasterForm = {
+  id?: number;
+  name: string;
+  city: string;
+  district: string;
+  address: string;
+  parentId: string;
+  category: string;
+};
 
-type MasterKind = 'locations' | 'categories' | 'skills';
+const emptyForm: MasterForm = {
+  name: "",
+  city: "",
+  district: "",
+  address: "",
+  parentId: "",
+  category: "",
+};
 
-const CONFIG = {
-  locations: {
-    title: 'Địa điểm',
-    icon: 'location_on',
-    fields: [
-      { key: 'city', label: 'Thành phố *' },
-      { key: 'district', label: 'Quận/Huyện' },
-      { key: 'address', label: 'Địa chỉ' },
-    ],
-    empty: { city: '', district: '', address: '' },
-    load: () => jobService.getLocations(),
-    create: (data: any) => jobService.createLocation(data),
-    update: (id: number, data: any) => jobService.updateLocation(id, data),
-    remove: (id: number) => jobService.deleteLocation(id),
-    primary: (item: any) => item.city,
-    secondary: (item: any) => [item.district, item.address].filter(Boolean).join(' • '),
+const tabs: Array<{
+  key: MasterKind;
+  label: string;
+  icon: string;
+  description: string;
+}> = [
+  {
+    key: "locations",
+    label: "Locations",
+    icon: "location_on",
+    description: "Thành phố, quận/huyện và địa chỉ tuyển dụng.",
   },
-  categories: {
-    title: 'Ngành nghề',
-    icon: 'category',
-    fields: [
-      { key: 'name', label: 'Tên ngành nghề *' },
-      { key: 'parentId', label: 'Parent ID' },
-    ],
-    empty: { name: '', parentId: '' },
-    load: () => jobService.getCategories(),
-    create: (data: any) => jobService.createCategory(data),
-    update: (id: number, data: any) => jobService.updateCategory(id, data),
-    remove: (id: number) => jobService.deleteCategory(id),
-    primary: (item: any) => item.name,
-    secondary: (item: any) => (item.parentId ? `Parent #${item.parentId}` : 'Danh mục gốc'),
+  {
+    key: "categories",
+    label: "Categories",
+    icon: "category",
+    description: "Ngành nghề và nhóm công việc.",
   },
-  skills: {
-    title: 'Kỹ năng',
-    icon: 'psychology',
-    fields: [
-      { key: 'name', label: 'Tên kỹ năng *' },
-      { key: 'category', label: 'Nhóm kỹ năng' },
-    ],
-    empty: { name: '', category: '' },
-    load: () => jobService.getSkills(),
-    create: (data: any) => jobService.createSkill(data),
-    update: (id: number, data: any) => jobService.updateSkill(id, data),
-    remove: (id: number) => jobService.deleteSkill(id),
-    primary: (item: any) => item.name,
-    secondary: (item: any) => item.category || 'Chưa phân nhóm',
+  {
+    key: "skills",
+    label: "Skills",
+    icon: "psychology",
+    description: "Kỹ năng dùng cho job và matching.",
   },
-} satisfies Record<MasterKind, any>;
+];
+
+const itemTitle = (item: MasterItem) => {
+  if ("city" in item)
+    return [item.city, item.district, item.address].filter(Boolean).join(" - ");
+  return item.name;
+};
 
 export default function AdminMasterDataPage() {
-  const [activeTab, setActiveTab] = useState<MasterKind>('locations');
-  const [items, setItems] = useState<any[]>([]);
-  const [form, setForm] = useState<Record<string, string>>(CONFIG.locations.empty);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<MasterKind>("locations");
+  const [items, setItems] = useState<Record<MasterKind, MasterItem[]>>({
+    locations: [],
+    categories: [],
+    skills: [],
+  });
+  const [form, setForm] = useState<MasterForm>(emptyForm);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
+  const [error, setError] = useState("");
 
-  const config = useMemo(() => CONFIG[activeTab], [activeTab]);
+  const activeMeta = tabs.find((tab) => tab.key === activeTab)!;
 
-  const loadItems = async () => {
+  const filteredItems = useMemo(() => {
+    const keyword = searchTerm.trim().toLowerCase();
+    const list = items[activeTab];
+    if (!keyword) return list;
+    return list.filter((item) =>
+      itemTitle(item).toLowerCase().includes(keyword),
+    );
+  }, [activeTab, items, searchTerm]);
+
+  const loadData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setMessage('');
-      setItems(await config.load());
-    } catch (error: any) {
-      setMessage(error.response?.data?.message || `Không thể tải ${config.title.toLowerCase()}.`);
+      const [locations, categories, skills] = await Promise.all([
+        adminService.getLocations(),
+        adminService.getCategories(),
+        adminService.getSkills(),
+      ]);
+      setItems({ locations, categories, skills });
+      setError("");
+    } catch {
+      setError("Không tải được dữ liệu nền.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    setForm(config.empty);
-    setEditingId(null);
-    loadItems();
-  }, [activeTab]);
+    loadData();
+  }, []);
 
-  const normalizePayload = () => {
-    return Object.fromEntries(
-      Object.entries(form)
-        .map(([key, value]) => {
-          const trimmed = value.trim();
-          if (key === 'parentId') {
-            return [key, trimmed ? Number(trimmed) : undefined];
-          }
-          return [key, trimmed || undefined];
-        })
-        .filter(([, value]) => value !== undefined),
-    );
+  const setTab = (tab: MasterKind) => {
+    setActiveTab(tab);
+    setForm(emptyForm);
+    setSearchTerm("");
+    setError("");
   };
 
-  const resetForm = () => {
-    setEditingId(null);
-    setForm(config.empty);
-  };
-
-  const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    const payload = normalizePayload();
-    const requiredField = config.fields[0].key;
-    if (!payload[requiredField]) {
-      setMessage(`${config.fields[0].label.replace(' *', '')} là bắt buộc.`);
+  const editItem = (item: MasterItem) => {
+    if ("city" in item) {
+      setForm({
+        ...emptyForm,
+        id: item.id,
+        city: item.city || "",
+        district: item.district || "",
+        address: item.address || "",
+      });
       return;
     }
 
+    if ("parentId" in item) {
+      setForm({
+        ...emptyForm,
+        id: item.id,
+        name: item.name || "",
+        parentId: item.parentId ? String(item.parentId) : "",
+      });
+      return;
+    }
+
+    const skill = item as Skill;
+    setForm({
+      ...emptyForm,
+      id: skill.id,
+      name: skill.name || "",
+      category: skill.category || "",
+    });
+  };
+
+  const buildPayload = () => {
+    if (activeTab === "locations") {
+      return {
+        city: form.city.trim(),
+        district: form.district.trim() || undefined,
+        address: form.address.trim() || undefined,
+      };
+    }
+
+    if (activeTab === "categories") {
+      return {
+        name: form.name.trim(),
+        parentId: form.parentId ? Number(form.parentId) : undefined,
+      };
+    }
+
+    return {
+      name: form.name.trim(),
+      category: form.category.trim() || undefined,
+    };
+  };
+
+  const submitItem = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const isValid =
+      activeTab === "locations" ? form.city.trim() : form.name.trim();
+    if (!isValid) return;
+
+    setSaving(true);
     try {
-      setSaving(true);
-      setMessage('');
-      if (editingId) {
-        await config.update(editingId, payload);
+      const payload = buildPayload();
+      let saved: MasterItem;
+
+      if (activeTab === "locations") {
+        saved = form.id
+          ? await adminService.updateLocation(form.id, payload)
+          : await adminService.createLocation(payload);
+      } else if (activeTab === "categories") {
+        saved = form.id
+          ? await adminService.updateCategory(form.id, payload)
+          : await adminService.createCategory(payload);
       } else {
-        await config.create(payload);
+        saved = form.id
+          ? await adminService.updateSkill(form.id, payload)
+          : await adminService.createSkill(payload);
       }
-      resetForm();
-      await loadItems();
-      setMessage(editingId ? 'Đã cập nhật dữ liệu.' : 'Đã tạo dữ liệu mới.');
-    } catch (error: any) {
-      setMessage(error.response?.data?.message || 'Lưu dữ liệu thất bại.');
+
+      setItems((current) => ({
+        ...current,
+        [activeTab]: form.id
+          ? current[activeTab].map((item) =>
+              item.id === saved.id ? saved : item,
+            )
+          : [...current[activeTab], saved],
+      }));
+      setForm(emptyForm);
+      setError("");
+    } catch {
+      setError(
+        "Lưu dữ liệu thất bại. Kiểm tra giá trị bắt buộc hoặc dữ liệu đang trùng.",
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  const startEdit = (item: any) => {
-    setEditingId(item.id);
-    setForm(
-      Object.fromEntries(
-        Object.keys(config.empty).map((key) => [key, item[key] == null ? '' : String(item[key])]),
-      ),
-    );
-  };
+  const deleteItem = async (item: MasterItem) => {
+    if (!window.confirm(`Xóa "${itemTitle(item)}"?`)) return;
 
-  const handleDelete = async (item: any) => {
-    if (!confirm(`Xóa "${config.primary(item)}"?`)) return;
+    setSaving(true);
     try {
-      setMessage('');
-      await config.remove(item.id);
-      await loadItems();
-      setMessage('Đã xóa dữ liệu.');
-    } catch (error: any) {
-      setMessage(error.response?.data?.message || 'Không thể xóa dữ liệu.');
+      if (activeTab === "locations") await adminService.deleteLocation(item.id);
+      if (activeTab === "categories")
+        await adminService.deleteCategory(item.id);
+      if (activeTab === "skills") await adminService.deleteSkill(item.id);
+
+      setItems((current) => ({
+        ...current,
+        [activeTab]: current[activeTab].filter((entry) => entry.id !== item.id),
+      }));
+      if (form.id === item.id) setForm(emptyForm);
+      setError("");
+    } catch {
+      setError("Không thể xóa dữ liệu đang được sử dụng bởi tin tuyển dụng.");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-headline-xl text-headline-xl font-bold text-on-surface">Dữ liệu gốc Job Service</h1>
-        <p className="text-on-surface-variant mt-1">Quản lý Locations, Categories và Skills dùng khi tạo tin tuyển dụng.</p>
+        <h1 className="text-2xl font-bold text-slate-900">Dữ liệu nền</h1>
+        <p className="text-sm text-slate-500">
+          Quản lý locations, categories và skills cho hệ thống tuyển dụng.
+        </p>
       </div>
 
-      <div className="flex flex-wrap gap-2 rounded-xl border border-outline-variant/30 bg-surface-container-low p-2">
-        {(Object.keys(CONFIG) as MasterKind[]).map((key) => (
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        {tabs.map((tab) => (
           <button
-            key={key}
-            onClick={() => setActiveTab(key)}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 font-bold transition-colors ${
-              activeTab === key ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:bg-surface'
+            key={tab.key}
+            onClick={() => setTab(tab.key)}
+            className={`inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-bold ${
+              activeTab === tab.key
+                ? "border-indigo-600 bg-indigo-600 text-white"
+                : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             }`}
           >
-            <span className="material-symbols-outlined text-[20px]">{CONFIG[key].icon}</span>
-            {CONFIG[key].title}
+            <span className="material-symbols-outlined text-[18px]">
+              {tab.icon}
+            </span>
+            {tab.label}
           </button>
         ))}
       </div>
 
-      {message && (
-        <div className="rounded-lg border border-outline-variant bg-surface-container-low p-3 text-sm text-on-surface">
-          {message}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <form onSubmit={handleSubmit} className="xl:col-span-1 bg-surface rounded-xl border border-outline-variant/30 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-headline-lg text-headline-lg font-bold">
-              {editingId ? `Sửa ${config.title.toLowerCase()}` : `Thêm ${config.title.toLowerCase()}`}
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[380px_1fr]">
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-slate-900">
+              {form.id ? `Sửa ${activeMeta.label}` : `Tạo ${activeMeta.label}`}
             </h2>
-            {editingId && (
-              <button type="button" onClick={resetForm} className="text-sm font-bold text-primary">
-                Hủy
+            <p className="text-sm text-slate-500">{activeMeta.description}</p>
+          </div>
+
+          <form onSubmit={submitItem} className="space-y-4">
+            {activeTab === "locations" && (
+              <>
+                <input
+                  value={form.city}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      city: event.target.value,
+                    }))
+                  }
+                  placeholder="Thành phố *"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+                <input
+                  value={form.district}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      district: event.target.value,
+                    }))
+                  }
+                  placeholder="Quận/Huyện"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+                <input
+                  value={form.address}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      address: event.target.value,
+                    }))
+                  }
+                  placeholder="Địa chỉ"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </>
+            )}
+
+            {activeTab === "categories" && (
+              <>
+                <input
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="Tên ngành nghề *"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+                <select
+                  value={form.parentId}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      parentId: event.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                >
+                  <option value="">Không có danh mục cha</option>
+                  {(items.categories as JobCategory[])
+                    .filter((category) => category.id !== form.id)
+                    .map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                </select>
+              </>
+            )}
+
+            {activeTab === "skills" && (
+              <>
+                <input
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                    }))
+                  }
+                  placeholder="Tên kỹ năng *"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+                <input
+                  value={form.category}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      category: event.target.value,
+                    }))
+                  }
+                  placeholder="Nhóm kỹ năng"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                />
+              </>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                disabled={saving}
+                className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {saving ? "Đang lưu..." : form.id ? "Cập nhật" : "Tạo mới"}
               </button>
+              {form.id && (
+                <button
+                  type="button"
+                  onClick={() => setForm(emptyForm)}
+                  className="rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+              )}
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-col gap-3 border-b border-slate-200 p-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                {activeMeta.label}
+              </h2>
+              <p className="text-sm text-slate-500">
+                {filteredItems.length} bản ghi
+              </p>
+            </div>
+            <div className="relative w-full lg:w-80">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[20px] text-slate-400">
+                search
+              </span>
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Tìm dữ liệu"
+                className="w-full rounded-lg border border-slate-200 py-2 pl-10 pr-4 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+          </div>
+
+          <div className="divide-y divide-slate-100">
+            {loading ? (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">
+                Đang tải dữ liệu...
+              </div>
+            ) : filteredItems.length === 0 ? (
+              <div className="px-5 py-10 text-center text-sm text-slate-500">
+                Chưa có dữ liệu phù hợp.
+              </div>
+            ) : (
+              filteredItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex flex-col gap-3 px-5 py-4 hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <div className="font-semibold text-slate-900">
+                      {itemTitle(item)}
+                    </div>
+                    <div className="mt-1 text-xs text-slate-500">
+                      {"category" in item && item.category
+                        ? `Nhóm: ${item.category}`
+                        : `ID: ${item.id}`}
+                      {"parentId" in item && item.parentId
+                        ? ` · Parent ID: ${item.parentId}`
+                        : ""}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => editItem(item)}
+                      className="rounded-md bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      onClick={() => deleteItem(item)}
+                      disabled={saving}
+                      className="rounded-md bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </div>
+              ))
             )}
           </div>
-
-          {config.fields.map((field: any) => (
-            <label key={field.key} className="block space-y-1">
-              <span className="text-sm font-bold text-on-surface-variant">{field.label}</span>
-              <input
-                value={form[field.key] || ''}
-                onChange={(event) => setForm((prev) => ({ ...prev, [field.key]: event.target.value }))}
-                className="w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 outline-none focus:border-primary"
-              />
-            </label>
-          ))}
-
-          <button disabled={saving} className="w-full rounded-lg bg-primary px-4 py-3 font-bold text-on-primary disabled:opacity-60">
-            {saving ? 'Đang lưu...' : editingId ? 'Cập nhật' : 'Tạo mới'}
-          </button>
-        </form>
-
-        <div className="xl:col-span-2 bg-surface rounded-xl border border-outline-variant/30 overflow-hidden">
-          <div className="grid grid-cols-[1fr_140px] gap-4 border-b border-outline-variant/30 bg-surface-container-low px-5 py-3 text-sm font-bold text-on-surface-variant">
-            <span>{config.title}</span>
-            <span className="text-right">Thao tác</span>
-          </div>
-
-          {loading ? (
-            <div className="p-8 text-center text-on-surface-variant">Đang tải...</div>
-          ) : items.length === 0 ? (
-            <div className="p-8 text-center text-on-surface-variant">Chưa có dữ liệu.</div>
-          ) : (
-            items.map((item) => (
-              <div key={item.id} className="grid grid-cols-[1fr_140px] gap-4 border-b border-outline-variant/20 px-5 py-4 last:border-b-0">
-                <div className="min-w-0">
-                  <div className="font-bold text-on-surface truncate">{config.primary(item)}</div>
-                  <div className="text-sm text-on-surface-variant truncate">{config.secondary(item)}</div>
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => startEdit(item)} className="rounded-lg bg-surface-container px-3 py-2 text-sm font-bold text-primary">
-                    Sửa
-                  </button>
-                  <button onClick={() => handleDelete(item)} className="rounded-lg bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
-                    Xóa
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -23,6 +23,17 @@ export const fileService = {
     return response.data;
   },
 
+  async uploadCompanyLogo(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    const response = await api.post("/upload/company-logo", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  },
+
   async getMyCVs() {
     const response = await api.get("/upload/my-cvs");
     return response.data;

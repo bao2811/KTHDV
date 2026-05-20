@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CandidateProfile, WorkExperience, Education, Resume, Application } from '@prisma/client';
 
 @Injectable()
 export class CandidateService {
@@ -15,7 +14,7 @@ export class CandidateService {
     dateOfBirth?: string;
     address?: string;
     summary?: string;
-  }): Promise<CandidateProfile> {
+  }): Promise<any> {
     return this.prisma.candidateProfile.create({
       data: {
         userId: data.userId,
@@ -356,7 +355,7 @@ export class CandidateService {
     jobId: number;
     candidateId: number;
     resumeId: number;
-  }): Promise<Application> {
+  }): Promise<any> {
     return this.prisma.application.create({
       data: {
         jobId: data.jobId,
@@ -377,7 +376,7 @@ export class CandidateService {
       page?: number;
       limit?: number;
     } = {},
-  ): Promise<{ data: Application[]; pagination: any }> {
+  ): Promise<{ data: any[]; pagination: any }> {
     const page = params.page || 1;
     const limit = params.limit || 10;
     const skip = (page - 1) * limit;
