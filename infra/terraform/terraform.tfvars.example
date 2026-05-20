@@ -1,0 +1,26 @@
+aws_region            = "ap-southeast-1"
+project_name          = "recruitment"
+environment           = "prod"
+db_name               = "recruitment_db"
+db_username           = "admin"
+db_password           = "replace-me"
+jwt_secret            = "replace-me-with-a-long-random-secret"
+jwt_refresh_secret    = "replace-me-with-a-second-secret"
+google_client_id      = "replace-me"
+google_client_secret  = "replace-me"
+google_callback_url   = "https://api.example.com/api/auth/google/callback"
+frontend_origin       = "https://app.example.com"
+next_public_api_url   = "https://api.example.com/api"
+upload_bucket_name    = "recruitment-cv-storage-prod"
+object_storage_access_key = "replace-me-if-you-keep-the-current-s3-compatible-upload-flow"
+object_storage_secret_key = "replace-me-if-you-keep-the-current-s3-compatible-upload-flow"
+container_image_tag   = "latest"
+
+# Optional monitoring alert delivery. Keep empty to create alarms without notifications.
+alarm_sns_topic_arn = ""
+
+# Optional alarm thresholds.
+ecs_cpu_alarm_threshold             = 80
+ecs_memory_alarm_threshold          = 85
+alb_latency_alarm_threshold_seconds = 1
+alb_5xx_alarm_threshold             = 5
