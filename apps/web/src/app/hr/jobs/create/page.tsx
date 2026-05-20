@@ -24,7 +24,7 @@ export default function CreateJobPage() {
   const [showSkillModal, setShowSkillModal] = useState(false);
   
   const [newCompany, setNewCompany] = useState({ name: '', website: '', description: '' });
-  const [newLocation, setNewLocation] = useState({ city: '', country: 'Vietnam', address: '' });
+  const [newLocation, setNewLocation] = useState({ city: '', district: '', address: '' });
   const [newCategory, setNewCategory] = useState({ name: '', description: '' });
   const [newSkill, setNewSkill] = useState({ name: '', category: '' });
   const [activeSkillIndex, setActiveSkillIndex] = useState<number | null>(null);
@@ -213,7 +213,7 @@ export default function CreateJobPage() {
   const getCompanyName = (id: string) => companies.find(c => c.id.toString() === id)?.name || 'Chưa chọn';
   const getLocationName = (id: string) => {
     const loc = locations.find(l => l.id.toString() === id);
-    return loc ? `${loc.city}, ${loc.country}` : 'Chưa chọn';
+    return loc ? [loc.city, loc.district].filter(Boolean).join(', ') : 'Chưa chọn';
   };
   const getCategoryName = (id: string) => categories.find(c => c.id.toString() === id)?.name || 'Chưa chọn';
   const getSkillName = (id: string) => availableSkills.find(s => s.id.toString() === id)?.name || 'Chưa chọn';
@@ -247,7 +247,7 @@ export default function CreateJobPage() {
       // Map UI fields to backend schema (city, district, address)
       const dataToSend: any = { 
         city: newLocation.city,
-        district: (newLocation as any).country, // Using 'country' field from state as 'district'
+        district: newLocation.district,
         address: newLocation.address 
       };
       
@@ -255,7 +255,7 @@ export default function CreateJobPage() {
       setLocations(prev => [...prev, location]);
       setFormData(prev => ({ ...prev, locationId: location.id.toString() }));
       setShowLocationModal(false);
-      setNewLocation({ city: '', country: '', address: '' });
+      setNewLocation({ city: '', district: '', address: '' });
     } catch (error) {
       console.error('Failed to create location:', error);
       alert('Không thể tạo địa điểm mới.');
@@ -438,7 +438,7 @@ export default function CreateJobPage() {
                             required
                           >
                             <option value="" disabled>-- Chọn địa điểm --</option>
-                            {locations.map(l => <option key={l.id} value={l.id}>{l.city}, {l.country}</option>)}
+                            {locations.map(l => <option key={l.id} value={l.id}>{[l.city, l.district].filter(Boolean).join(', ')}</option>)}
                             <option value="ADD_NEW" className="text-primary font-bold">+ Thêm địa điểm mới</option>
                           </select>
                           <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-outline">expand_more</span>
@@ -923,8 +923,8 @@ export default function CreateJobPage() {
                   <label className="text-label-medium font-label-medium text-on-surface-variant">Quận/Huyện</label>
                   <input 
                     type="text" 
-                    value={newLocation.country}
-                    onChange={e => setNewLocation({...newLocation, country: e.target.value})}
+                    value={newLocation.district}
+                    onChange={e => setNewLocation({...newLocation, district: e.target.value})}
                     className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant rounded-xl focus:outline-none focus:border-primary"
                     placeholder="VD: Cầu Giấy"
                   />
