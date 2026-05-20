@@ -103,6 +103,24 @@ export class FileUploadController {
     };
   }
 
+  @Post('company-logo')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  async uploadCompanyLogo(
+    @UploadedFile() file: any,
+    @CurrentUser('id') userId: number,
+  ) {
+    const { fileUrl } = await this.fileUploadService.uploadCompanyLogo(file, userId);
+    const logoUrl = await this.fileUploadService.getDownloadUrl(fileUrl);
+
+    return {
+      success: true,
+      fileUrl,
+      logoUrl,
+      message: 'Upload logo công ty thành công',
+    };
+  }
+
   /**
    * Get candidate's CVs
    * GET /api/upload/my-cvs

@@ -80,7 +80,7 @@ export const API_ROUTES = {
     APPLICATION_STATUS: (id: number | string) => `/applications/${id}/status`,
     // Interviews (admin view)
     INTERVIEWS_ALL: "/interviews/list",
-    INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}/cancel`,
+    INTERVIEW_CANCEL: (id: number | string) => `/interviews/${id}`,
     // Referrals
     REFERRALS: "/admin/referrals",
     REFERRAL_VERIFY: (id: number | string) => `/admin/referrals/${id}/verify`,

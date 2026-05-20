@@ -8,6 +8,10 @@ type NavItem = {
   label: string;
   href: string;
   icon: string;
+  permission?: {
+    resource: string;
+    action?: string;
+  };
 };
 
 type SidebarProps = {
@@ -31,9 +35,14 @@ const getNavItems = (role: string): NavItem[] => {
     case 'admin':
       return [
         { label: 'Bảng điều khiển', href: '/admin', icon: 'dashboard' },
-        { label: 'Người dùng', href: '/admin/users', icon: 'manage_accounts' },
-        { label: 'Referral', href: '/admin/referrals', icon: 'how_to_reg' },
-        { label: 'Cài đặt hệ thống', href: '/admin/settings', icon: 'settings' },
+        { label: 'Người dùng', href: '/admin/users', icon: 'manage_accounts', permission: { resource: 'users' } },
+        { label: 'Công ty', href: '/admin/companies', icon: 'business', permission: { resource: 'companies' } },
+        { label: 'Tin tuyển dụng', href: '/admin/jobs', icon: 'work', permission: { resource: 'jobs' } },
+        { label: 'Ứng tuyển', href: '/admin/applications', icon: 'assignment', permission: { resource: 'applications' } },
+        { label: 'Phỏng vấn', href: '/admin/interviews', icon: 'event', permission: { resource: 'interviews' } },
+        { label: 'Dữ liệu nền', href: '/admin/master-data', icon: 'database', permission: { resource: 'master-data' } },
+        { label: 'Referral', href: '/admin/referrals', icon: 'how_to_reg', permission: { resource: 'referrals' } },
+        { label: 'Cài đặt hệ thống', href: '/admin/settings', icon: 'settings', permission: { resource: 'settings' } },
       ];
     case 'candidate':
     default:
@@ -50,8 +59,12 @@ const getNavItems = (role: string): NavItem[] => {
 
 export default function Sidebar({ role, isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
-  const navItems = getNavItems(role);
+  const { user, hasPermission } = useAuth();
+  const navItems = getNavItems(role).filter(
+    (item) =>
+      !item.permission ||
+      hasPermission(item.permission.resource, item.permission.action || 'read'),
+  );
 
   const avatarUrl = user?.candidateProfile?.avatarUrl || user?.profile?.avatarUrl;
   const displayName = user?.fullName || user?.email || 'User';
