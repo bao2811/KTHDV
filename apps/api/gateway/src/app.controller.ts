@@ -1,6 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Header } from '@nestjs/common';
+import { collectDefaultMetrics, register } from 'prom-client';
 import { AppService } from './app.service';
 import { Public } from './auth/decorators/public.decorator';
+
+register.setDefaultLabels({ service: 'gateway' });
+collectDefaultMetrics({ register });
 
 @Controller()
 export class AppController {
@@ -9,10 +13,19 @@ export class AppController {
   @Public()
   @Get('health')
   getHealth() {
-    return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      service: 'recruitment-gateway',
-    };
+    return this.appService.getHealth('recruitment-gateway');
+  }
+
+  @Public()
+  @Get('ready')
+  getReadiness() {
+    return this.appService.getReadiness('recruitment-gateway');
+  }
+
+  @Public()
+  @Get('metrics')
+  @Header('Content-Type', register.contentType)
+  getMetrics() {
+    return register.metrics();
   }
 }

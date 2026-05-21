@@ -50,7 +50,7 @@ export class FileUploadController {
     },
   })
   async uploadCV(@UploadedFile() file: any, @CurrentUser('id') userId: number) {
-    // Upload to MinIO
+    // Upload to object storage
     const { fileUrl, fileName, fileType } =
       await this.fileUploadService.uploadCV(file, userId);
 
@@ -78,7 +78,7 @@ export class FileUploadController {
     @UploadedFile() file: any,
     @CurrentUser('id') userId: number,
   ) {
-    // Upload to MinIO using specific avatar method
+    // Upload avatar to object storage
     const { fileUrl } = await this.fileUploadService.uploadAvatar(file, userId);
 
     // Get presigned URL for immediate display
@@ -202,11 +202,8 @@ export class FileUploadController {
       };
     }
 
-    // Delete from MinIO
-    const fileName = resume.fileUrl.split('/').pop();
-    if (fileName) {
-      this.fileUploadService.deleteFile(fileName);
-    }
+    // Delete from object storage using the full object path.
+    await this.fileUploadService.deleteFile(resume.fileUrl);
 
     // Delete from database
     await this.prisma.resume.delete({
@@ -263,7 +260,7 @@ export class FileUploadController {
       res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Disposition', `inline; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`);
 
-      // Pipe MinIO stream to express response
+      // Pipe object storage stream to express response
       stream.pipe(res);
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -275,7 +272,7 @@ export class FileUploadController {
   }
 
   /**
-   * Download CV by file path (with full MinIO path)
+   * Download CV by file path (with full object path)
    * GET /api/upload/cv/:id/*filePath
    */
   @Get('cv/:id/*filePath')

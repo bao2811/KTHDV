@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Referrer, ReferralVerification } from '@prisma/client';
 
 @Injectable()
 export class ReferralService {
@@ -12,18 +11,18 @@ export class ReferralService {
     email?: string;
     phone?: string;
     position?: string;
-  }): Promise<Referrer> {
+  }) {
     return this.prisma.referrer.create({ data });
   }
 
-  listReferrers(resumeId?: number): Promise<Referrer[]> {
+  listReferrers(resumeId?: number) {
     return this.prisma.referrer.findMany({
       where: resumeId ? { resumeId } : undefined,
       orderBy: { id: 'asc' },
     });
   }
 
-  async createVerification(referrerId: number, token: string): Promise<ReferralVerification> {
+  async createVerification(referrerId: number, token: string) {
     const referrer = await this.prisma.referrer.findUnique({
       where: { id: referrerId },
     });
@@ -55,7 +54,7 @@ export class ReferralService {
       status: 'PENDING' | 'VERIFIED' | 'SUSPICIOUS' | 'EXPIRED';
       responseData?: any;
     },
-  ): Promise<ReferralVerification> {
+  ) {
     const verification = await this.prisma.referralVerification.findUnique({
       where: { token },
     });

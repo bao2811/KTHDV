@@ -1,0 +1,141 @@
+aws_region = "ap-southeast-1"
+
+project_name = "bao12345"
+
+environment = "prod"
+
+db_password = "StrongPassword123!"
+
+jwt_secret = "super-long-secret"
+
+jwt_refresh_secret = "super-long-refresh-secret"
+
+container_image_tag = "latest"
+
+
+1. Apply lại Terraform sau khi sửa terraform.tfvars
+
+cd /home/bao/Downloads/2526II_INT3505_1_Nhom9/infra/terraform
+terraform fmt
+terraform validate
+terraform apply
+2. Login ECR
+
+aws ecr get-login-password --region ap-southeast-1 \
+  | docker login --username AWS --password-stdin 521590706203.dkr.ecr.ap-southeast-1.amazonaws.com
+3. Build và push images
+
+cd /home/bao/Downloads/2526II_INT3505_1_Nhom9
+
+ALB_URL="http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com"
+REGISTRY="521590706203.dkr.ecr.ap-southeast-1.amazonaws.com"
+PROJECT="kthdv"
+TAG="latest"
+
+docker build -f apps/web/Dockerfile \
+  --build-arg NEXT_PUBLIC_API_URL="$ALB_URL/api" \
+  -t "$REGISTRY/$PROJECT/web:$TAG" .
+
+docker build -f apps/api/gateway/Dockerfile -t "$REGISTRY/$PROJECT/gateway:$TAG" .
+docker build -f apps/api/candidate-service/Dockerfile -t "$REGISTRY/$PROJECT/candidate-service:$TAG" .
+docker build -f apps/api/job-service/Dockerfile -t "$REGISTRY/$PROJECT/job-service:$TAG" .
+docker build -f apps/api/interview-service/Dockerfile -t "$REGISTRY/$PROJECT/interview-service:$TAG" .
+docker build -f apps/api/matching-service/Dockerfile -t "$REGISTRY/$PROJECT/matching-service:$TAG" .
+docker build -f apps/api/notification-service/Dockerfile -t "$REGISTRY/$PROJECT/notification-service:$TAG" .
+
+docker push "$REGISTRY/$PROJECT/web:$TAG"
+docker push "$REGISTRY/$PROJECT/gateway:$TAG"
+docker push "$REGISTRY/$PROJECT/candidate-service:$TAG"
+docker push "$REGISTRY/$PROJECT/job-service:$TAG"
+docker push "$REGISTRY/$PROJECT/interview-service:$TAG"
+docker push "$REGISTRY/$PROJECT/matching-service:$TAG"
+docker push "$REGISTRY/$PROJECT/notification-service:$TAG"
+4. Force ECS deploy lại
+
+CLUSTER="kthdv-prod-cluster"
+REGION="ap-southeast-1"
+
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service web --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service gateway --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service candidate-service --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service job-service --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service interview-service --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service matching-service --force-new-deployment
+aws ecs update-service --region "$REGION" --cluster "$CLUSTER" --service notification-service --force-new-deployment
+5. Chờ deploy xong
+
+aws ecs wait services-stable --region "$REGION" --cluster "$CLUSTER" \
+  --services web gateway candidate-service job-service interview-service matching-service notification-service
+6. Kiểm tra app
+
+curl http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com/ready
+curl http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com/api/ready
+Mở web:
+
+http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com
+Nếu lỗi, xem log:
+
+aws logs tail /ecs/kthdv-prod/web --region ap-southeast-1 --follow
+aws logs tail /ecs/kthdv-prod/gateway --region ap-southeast-1 --follow
+aws logs tail /ecs/kthdv-prod/candidate-service --region ap-southeast-1 --follow
+
+
+Có 3 lỗi dây chuyền:
+
+Login ECR timeout:
+Read timeout on endpoint URL: https://api.ecr.ap-southeast-1.amazonaws.com/
+password is empty
+Vì login fail nên Docker không có password.
+
+Docker build fail do kéo base image node:20-alpine từ Docker Hub bị lỗi mạng:
+Head https://registry-1.docker.io/... EOF
+Vì build fail nên không có image local để push:
+An image does not exist locally with the tag
+Làm lại theo thứ tự này, chạy từng lệnh và chỉ chạy lệnh sau khi lệnh trước thành công.
+
+1. Login ECR lại
+
+aws ecr get-login-password --region ap-southeast-1 --cli-read-timeout 120 --cli-connect-timeout 120 \
+  | docker login --username AWS --password-stdin 521590706203.dkr.ecr.ap-southeast-1.amazonaws.com
+Kết quả đúng phải có:
+
+Login Succeeded
+2. Pull base image trước
+
+docker pull node:20-alpine
+Nếu lệnh này vẫn EOF, chờ mạng ổn rồi chạy lại.
+
+3. Build gateway
+
+docker build -f apps/api/gateway/Dockerfile \
+  -t 521590706203.dkr.ecr.ap-southeast-1.amazonaws.com/kthdv/gateway:latest .
+4. Push gateway
+
+docker push 521590706203.dkr.ecr.ap-southeast-1.amazonaws.com/kthdv/gateway:latest
+5. Redeploy ECS
+
+aws ecs update-service \
+  --region ap-southeast-1 \
+  --cli-read-timeout 120 \
+  --cli-connect-timeout 120 \
+  --cluster kthdv-prod-cluster \
+  --service gateway \
+  --force-new-deployment
+6. Chờ stable
+
+aws ecs wait services-stable \
+  --region ap-southeast-1 \
+  --cli-read-timeout 300 \
+  --cli-connect-timeout 120 \
+  --cluster kthdv-prod-cluster \
+  --services gateway
+7. Test metrics
+
+curl http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com/api/metrics
+Nếu mạng Docker Hub hay AWS CLI cứ timeout, cách dễ hơn là push code lên GitHub branch, rồi chạy workflow GitHub Actions. GitHub runner thường kéo Docker image và push ECR ổn hơn máy local.
+
+
+
+
+
+12:58 PM

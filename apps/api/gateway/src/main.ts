@@ -9,13 +9,22 @@ async function bootstrap() {
   // Global prefix
   app.setGlobalPrefix('api');
 
+  const configuredOrigins = [
+    process.env.FRONTEND_URL,
+    process.env.FRONTEND_ORIGIN,
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, ''),
+  ].filter(Boolean) as string[];
+
   // CORS
   app.enableCors({
     origin: [
-      'http://localhost:3001', 
-      'http://localhost:3000', 
-      'http://localhost:3456',
-      'https://nexustalent-orpin.vercel.app'
+      ...new Set([
+        ...configuredOrigins,
+        'http://localhost:3001',
+        'http://localhost:3000',
+        'http://localhost:3456',
+        'https://nexustalent-orpin.vercel.app',
+      ]),
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning'],

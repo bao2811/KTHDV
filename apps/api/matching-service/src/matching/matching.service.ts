@@ -1,12 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchResult } from '@prisma/client';
 
 @Injectable()
 export class MatchingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async runMatch(applicationId: number): Promise<MatchResult> {
+  async runMatch(applicationId: number) {
     const application = await this.prisma.application.findUnique({
       where: { id: applicationId },
       include: {
@@ -71,7 +70,7 @@ export class MatchingService {
     return result;
   }
 
-  async getMatch(applicationId: number): Promise<MatchResult> {
+  async getMatch(applicationId: number) {
     const result = await this.prisma.matchResult.findUnique({
       where: { applicationId },
       include: {

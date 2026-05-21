@@ -1,0 +1,269 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
+      POSTGRES_DB: ${POSTGRES_DB:-recruitment_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-recruitment_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recruitment-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - recruitment-network
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadminpassword}
+    command: server /data --console-address ":9001"
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - recruitment-network
+
+  candidate-service:
+    build:
+      context: .
+      dockerfile: apps/api/candidate-service/Dockerfile
+    image: recruitment/candidate-service:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3001
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      STORAGE_USE_SSL: ${STORAGE_USE_SSL:-false}
+      STORAGE_REGION: ${STORAGE_REGION:-ap-southeast-1}
+      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET:-true}
+      STORAGE_PRESIGNED_EXPIRY_SECONDS: ${STORAGE_PRESIGNED_EXPIRY_SECONDS:-3600}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadminpassword}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cv-storage}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3001/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  job-service:
+    build:
+      context: .
+      dockerfile: apps/api/job-service/Dockerfile
+    image: recruitment/job-service:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3002
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3002/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  interview-service:
+    build:
+      context: .
+      dockerfile: apps/api/interview-service/Dockerfile
+    image: recruitment/interview-service:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3003
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3003/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  matching-service:
+    build:
+      context: .
+      dockerfile: apps/api/matching-service/Dockerfile
+    image: recruitment/matching-service:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3005
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3005/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: apps/api/notification-service/Dockerfile
+    image: recruitment/notification-service:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3006
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3006/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  gateway:
+    build:
+      context: .
+      dockerfile: apps/api/gateway/Dockerfile
+    image: recruitment/gateway:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:-postgresql://admin:password123@postgres:5432/recruitment_db?schema=public}
+      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-dev-jwt-refresh-secret}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-google-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-google-client-secret}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL:-http://localhost:3000/api/auth/google/callback}
+      CANDIDATE_SERVICE_URL: http://candidate-service:3001
+      JOB_SERVICE_URL: http://job-service:3002
+      INTERVIEW_SERVICE_URL: http://interview-service:3003
+      MATCHING_SERVICE_URL: http://matching-service:3005
+      NOTIFICATION_SERVICE_URL: http://notification-service:3006
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      STORAGE_USE_SSL: ${STORAGE_USE_SSL:-false}
+      STORAGE_REGION: ${STORAGE_REGION:-ap-southeast-1}
+      STORAGE_AUTO_CREATE_BUCKET: ${STORAGE_AUTO_CREATE_BUCKET:-true}
+      STORAGE_PRESIGNED_EXPIRY_SECONDS: ${STORAGE_PRESIGNED_EXPIRY_SECONDS:-3600}
+      MINIO_ENDPOINT: ${MINIO_ENDPOINT:-minio}
+      MINIO_PORT: ${MINIO_PORT:-9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadminpassword}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-cv-storage}
+    ports:
+      - "${GATEWAY_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      candidate-service:
+        condition: service_started
+      job-service:
+        condition: service_started
+      interview-service:
+        condition: service_started
+      matching-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3000/api/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api}
+    image: recruitment/web:prod
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      PORT: 3456
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api}
+    ports:
+      - "${WEB_PORT:-3456}:3456"
+    depends_on:
+      gateway:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://127.0.0.1:3456/ready', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - recruitment-network
+
+networks:
+  recruitment-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:

@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: gateway-aws
+    metrics_path: /api/metrics
+    scheme: http
+    static_configs:
+      - targets:
+          - kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com
+        labels:
+          environment: prod
+
+  # Use these targets if you run docker-compose.prod.yml locally and want
+  # Prometheus to scrape every backend service through the Docker bridge.
+  # Keep them commented for the AWS demo because the private ECS services
+  # are not reachable from your laptop.
+  #
+  # - job_name: local-backend-services
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets:
+  #         - host.docker.internal:3001
+  #         - host.docker.internal:3002
+  #         - host.docker.internal:3003
+  #         - host.docker.internal:3005
+  #         - host.docker.internal:3006
+  #       labels:
+  #         environment: local

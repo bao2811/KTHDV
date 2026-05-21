@@ -7,72 +7,172 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  BucketLocationConstraint,
+  CreateBucketCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadBucketCommand,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as Minio from 'minio';
 import 'multer';
 
 /**
  * File Upload Service
- * Handles CV and document uploads to MinIO S3-compatible storage
- *
- * NOTE: Requires MinIO Docker container running
- * MinIO config:
- * - Endpoint: http://localhost:9000
- * - Access Key: minioadmin
- * - Secret Key: minioadmin
+ * Handles CV and document uploads to an S3-compatible object store.
+ * Local development can keep using MinIO, while production can point the
+ * same client at Amazon S3 by changing only environment variables.
  */
 @Injectable()
 export class FileUploadService implements OnModuleInit {
-  private minioClient: Minio.Client;
-  private minioBucket: string;
+  private storageBackend: 'minio' | 's3';
+  private s3Client?: S3Client;
+  private objectStoreClient?: Minio.Client;
+  private objectStoreBucket: string;
+  private objectStoreRegion: string;
+  private shouldAutoCreateBucket: boolean;
 
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService
   ) {
-    const endPoint = this.configService.get('MINIO_ENDPOINT', 'localhost');
-    const port = parseInt(this.configService.get('MINIO_PORT', '9000'), 10);
-    const accessKey = this.configService.get('MINIO_ACCESS_KEY', 'minioadmin');
-    const secretKey = this.configService.get('MINIO_SECRET_KEY', 'minioadmin');
-    this.minioBucket = this.configService.get('MINIO_BUCKET_NAME', 'cv-storage');
+    const configuredBackend = this.configService.get<string>('STORAGE_BACKEND');
+    const rawEndpoint = this.configService.get('MINIO_ENDPOINT', 'localhost');
+    const normalizedEndpoint = rawEndpoint.replace(/^https?:\/\//, '');
+    const explicitPort = this.configService.get('MINIO_PORT');
+    const inferredSsl =
+      rawEndpoint.startsWith('https://') || explicitPort === '443';
+    const useSSL = this.getBooleanConfig('STORAGE_USE_SSL', inferredSsl);
+    const defaultPort = useSSL ? 443 : 9000;
+    const port = parseInt(explicitPort ?? `${defaultPort}`, 10);
+    this.objectStoreBucket = this.configService.get(
+      'MINIO_BUCKET_NAME',
+      'cv-storage',
+    );
+    this.objectStoreRegion = this.configService.get(
+      'STORAGE_REGION',
+      'ap-southeast-1',
+    );
+    this.storageBackend =
+      configuredBackend === 's3' || normalizedEndpoint.includes('amazonaws.com')
+        ? 's3'
+        : 'minio';
+    const accessKey =
+      this.configService.get<string>('MINIO_ACCESS_KEY') ??
+      (this.storageBackend === 'minio' ? 'minioadmin' : undefined);
+    const secretKey =
+      this.configService.get<string>('MINIO_SECRET_KEY') ??
+      (this.storageBackend === 'minio' ? 'minioadmin' : undefined);
+    this.shouldAutoCreateBucket = this.getBooleanConfig(
+      'STORAGE_AUTO_CREATE_BUCKET',
+      this.storageBackend === 'minio',
+    );
 
-    this.minioClient = new Minio.Client({
-      endPoint,
-      port,
-      useSSL: false,
-      accessKey,
-      secretKey,
-    });
-  }
+    if (this.storageBackend === 'minio') {
+      this.objectStoreClient = new Minio.Client({
+        endPoint: normalizedEndpoint,
+        port,
+        useSSL,
+        accessKey,
+        secretKey,
+        region: this.objectStoreRegion,
+      });
+    }
 
-  async onModuleInit() {
-    // Ensure bucket exists on startup
-    try {
-      const exists = await this.minioClient.bucketExists(this.minioBucket);
-      if (!exists) {
-        await this.minioClient.makeBucket(this.minioBucket, 'us-east-1');
-        console.log(`Created MinIO bucket: ${this.minioBucket}`);
-      }
-    } catch (error) {
-      console.error('MinIO bucket initialization error:', error);
+    if (this.storageBackend === 's3') {
+      const s3Endpoint = this.configService.get<string>('S3_ENDPOINT');
+      const forcePathStyle = this.getBooleanConfig(
+        'AWS_S3_FORCE_PATH_STYLE',
+        false,
+      );
+      const credentials =
+        accessKey && secretKey
+          ? {
+              accessKeyId: accessKey,
+              secretAccessKey: secretKey,
+            }
+          : undefined;
+
+      this.s3Client = new S3Client({
+        region: this.objectStoreRegion,
+        endpoint: s3Endpoint,
+        forcePathStyle,
+        credentials,
+      });
     }
   }
 
+  async onModuleInit() {
+    // Auto-create is useful for local MinIO but should usually stay off for AWS.
+    if (!this.shouldAutoCreateBucket) {
+      return;
+    }
+
+    try {
+      if (this.storageBackend === 's3' && this.s3Client) {
+        await this.ensureS3Bucket();
+        return;
+      }
+
+      const exists = await this.objectStoreClient!.bucketExists(
+        this.objectStoreBucket,
+      );
+      if (!exists) {
+        await this.objectStoreClient!.makeBucket(
+          this.objectStoreBucket,
+          this.objectStoreRegion,
+        );
+        console.log(`Created object storage bucket: ${this.objectStoreBucket}`);
+      }
+    } catch (error) {
+      console.error('Object storage bucket initialization error:', error);
+    }
+  }
+
+  private async ensureS3Bucket(): Promise<void> {
+    if (!this.s3Client) {
+      return;
+    }
+
+    try {
+      await this.s3Client.send(
+        new HeadBucketCommand({
+          Bucket: this.objectStoreBucket,
+        }),
+      );
+    } catch {
+      const createCommand =
+        this.objectStoreRegion === 'us-east-1'
+          ? new CreateBucketCommand({
+              Bucket: this.objectStoreBucket,
+            })
+          : new CreateBucketCommand({
+              Bucket: this.objectStoreBucket,
+              CreateBucketConfiguration: {
+                LocationConstraint:
+                  this.objectStoreRegion as BucketLocationConstraint,
+              },
+            });
+
+      await this.s3Client.send(createCommand);
+      console.log(`Created S3 bucket: ${this.objectStoreBucket}`);
+    }
+  }
+
+  private getBooleanConfig(key: string, defaultValue: boolean): boolean {
+    const value = this.configService.get<string>(key);
+    if (value === undefined) {
+      return defaultValue;
+    }
+
+    return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+  }
+
   /**
-   * Upload CV file to MinIO
-   * Currently returns a mock URL for development
-   *
-   * In production, integrate with actual MinIO client:
-   * npm install minio
-   *
-   * Example implementation:
-   * const Minio = require('minio');
-   * const minioClient = new Minio.Client({
-   *   endPoint: this.minioEndpoint,
-   *   port: 9000,
-   *   useSSL: false,
-   *   accessKey: this.minioAccessKey,
-   *   secretKey: this.minioSecretKey,
-   * });
+   * Upload a file to object storage and persist only the object path.
    */
   async uploadFile(
     file: any,
@@ -119,14 +219,24 @@ export class FileUploadService implements OnModuleInit {
       const fileName = `${type}-${userId}-${timestamp}.${ext}`;
       const objectName = `${prefix}/${fileName}`;
 
-      // Actual MinIO upload
-      await this.minioClient.putObject(
-        this.minioBucket,
-        objectName,
-        file.buffer,
-        file.size,
-        { 'Content-Type': file.mimetype },
-      );
+      if (this.storageBackend === 's3' && this.s3Client) {
+        await this.s3Client.send(
+          new PutObjectCommand({
+            Bucket: this.objectStoreBucket,
+            Key: objectName,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+          }),
+        );
+      } else {
+        await this.objectStoreClient!.putObject(
+          this.objectStoreBucket,
+          objectName,
+          file.buffer,
+          file.size,
+          { 'Content-Type': file.mimetype },
+        );
+      }
 
       const originalname = Buffer.from(file.originalname, 'latin1').toString('utf8');
       return {
@@ -135,7 +245,7 @@ export class FileUploadService implements OnModuleInit {
         fileType: ext.toUpperCase(),
       };
     } catch (error) {
-      console.error('MinIO upload error details:', error);
+      console.error('Object storage upload error details:', error);
       throw new InternalServerErrorException(`Lỗi tải file lên hệ thống: ${error.message}`);
     }
   }
@@ -159,36 +269,63 @@ export class FileUploadService implements OnModuleInit {
   }
 
   /**
-   * Get file download URL (Presigned)
+   * Get a presigned download URL for a stored object.
    */
   async getDownloadUrl(objectName: string): Promise<string> {
     try {
-      // Generate a presigned URL valid for 1 hour (3600 seconds)
-      return await this.minioClient.presignedGetObject(
-        this.minioBucket,
+      const expirySeconds = parseInt(
+        this.configService.get('STORAGE_PRESIGNED_EXPIRY_SECONDS', '3600'),
+        10,
+      );
+
+      if (this.storageBackend === 's3' && this.s3Client) {
+        return await getSignedUrl(
+          this.s3Client,
+          new GetObjectCommand({
+            Bucket: this.objectStoreBucket,
+            Key: objectName,
+          }),
+          { expiresIn: expirySeconds },
+        );
+      }
+
+      return await this.objectStoreClient!.presignedGetObject(
+        this.objectStoreBucket,
         objectName,
-        3600,
+        expirySeconds,
       );
     } catch (error) {
-      console.error('MinIO presigned URL error:', error);
-      return ''; // Fallback or handle error
+      console.error('Object storage presigned URL error:', error);
+      throw new InternalServerErrorException('Lỗi tạo link tải file');
     }
   }
 
   /**
-   * Delete file from MinIO
+   * Delete a stored object by its full object path.
    */
   async deleteFile(objectName: string): Promise<void> {
     try {
-      await this.minioClient.removeObject(this.minioBucket, objectName);
-      console.log(`Deleted file from MinIO: ${objectName}`);
+      if (this.storageBackend === 's3' && this.s3Client) {
+        await this.s3Client.send(
+          new DeleteObjectCommand({
+            Bucket: this.objectStoreBucket,
+            Key: objectName,
+          }),
+        );
+      } else {
+        await this.objectStoreClient!.removeObject(
+          this.objectStoreBucket,
+          objectName,
+        );
+      }
+      console.log(`Deleted file from object storage: ${objectName}`);
     } catch (error) {
-      console.error('MinIO delete error:', error);
+      console.error('Object storage delete error:', error);
     }
   }
 
   /**
-   * Get file stream from MinIO
+   * Get file stream from object storage
    */
   async getFileStream(resumeId: number): Promise<{ stream: any; fileName: string; contentType: string }> {
     const resume = await this.prisma.resume.findUnique({
@@ -200,8 +337,21 @@ export class FileUploadService implements OnModuleInit {
     }
 
     try {
-      console.log(`Attempting to get object from MinIO. Bucket: ${this.minioBucket}, Path: ${resume.fileUrl}`);
-      const stream = await this.minioClient.getObject(this.minioBucket, resume.fileUrl);
+      console.log(`Attempting to get object. Bucket: ${this.objectStoreBucket}, Path: ${resume.fileUrl}`);
+      const stream =
+        this.storageBackend === 's3' && this.s3Client
+          ? (
+              await this.s3Client.send(
+                new GetObjectCommand({
+                  Bucket: this.objectStoreBucket,
+                  Key: resume.fileUrl,
+                }),
+              )
+            ).Body
+          : await this.objectStoreClient!.getObject(
+              this.objectStoreBucket,
+              resume.fileUrl,
+            );
       const contentType = resume.fileType === 'PDF' ? 'application/pdf' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       
       return {
@@ -210,8 +360,8 @@ export class FileUploadService implements OnModuleInit {
         contentType,
       };
     } catch (error) {
-      console.error('MinIO getObject error details:', error);
-      throw new BadRequestException(`MinIO Error: ${error.message}`);
+      console.error('Object storage getObject error details:', error);
+      throw new BadRequestException(`Storage Error: ${error.message}`);
     }
   }
 }

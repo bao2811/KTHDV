@@ -11,10 +11,16 @@
   "scripts": {
     "dev": "docker-compose up",
     "prisma:generate": "npm run prisma:generate --workspaces --if-present",
-    "build": "npm run build -w apps/*",
-    "lint": "npm run lint -w apps/*"
+    "prisma:migrate:deploy": "prisma migrate deploy --schema=apps/api/gateway/prisma/schema.prisma",
+    "prisma:migrate:status": "prisma migrate status --schema=apps/api/gateway/prisma/schema.prisma",
+    "prisma:seed": "ts-node libs/database/prisma/seed.ts",
+    "build": "npm run build -w apps/web -w apps/api/candidate-service -w apps/api/gateway -w apps/api/interview-service -w apps/api/job-service -w apps/api/matching-service -w apps/api/notification-service",
+    "lint": "npm run lint -w apps/web -w apps/api/candidate-service -w apps/api/gateway -w apps/api/interview-service -w apps/api/job-service -w apps/api/matching-service -w apps/api/notification-service"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "prom-client": "^15.1.3"
+  }
 }
