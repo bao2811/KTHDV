@@ -214,5 +214,5 @@ variable "cloudwatch_agent_image" {
 variable "adot_node_auto_instrumentation_image" {
   description = "ADOT Node.js auto instrumentation image."
   type        = string
-  default     = "public.ecr.aws/aws-observability/adot-autoinstrumentation-node:latest"
+  default     = "public.ecr.aws/aws-observability/adot-autoinstrumentation-node:v0.8.0"
 }

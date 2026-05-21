@@ -33,16 +33,7 @@ export class AuthService {
       throw new ConflictException('Email đã được sử dụng');
     }
 
-    // Get Candidate role (default for registration)
-    const candidateRole = await this.prisma.role.findUnique({
-      where: { name: 'Candidate' },
-    });
-
-    if (!candidateRole) {
-      throw new BadRequestException(
-        'Hệ thống chưa được khởi tạo. Vui lòng chạy seed data.',
-      );
-    }
+    const candidateRole = await this.getOrCreateCandidateRole();
 
     // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, 12);
@@ -263,16 +254,7 @@ export class AuthService {
     });
 
     if (!user) {
-      // Get Candidate role for new Google users
-      const candidateRole = await this.prisma.role.findUnique({
-        where: { name: 'Candidate' },
-      });
-
-      if (!candidateRole) {
-        throw new BadRequestException(
-          'Hệ thống chưa được khởi tạo. Vui lòng chạy seed data.',
-        );
-      }
+      const candidateRole = await this.getOrCreateCandidateRole();
 
       // Create new user from Google profile
       user = await this.prisma.$transaction(async (tx) => {
@@ -451,6 +433,14 @@ export class AuthService {
     await this.prisma.user.update({
       where: { id: userId },
       data: { refreshToken: hashedRefreshToken },
+    });
+  }
+
+  private getOrCreateCandidateRole() {
+    return this.prisma.role.upsert({
+      where: { name: 'Candidate' },
+      update: { description: 'Job seeker' },
+      create: { name: 'Candidate', description: 'Job seeker' },
     });
   }
 }

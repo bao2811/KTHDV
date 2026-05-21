@@ -21,7 +21,6 @@ COPY . .
 
 RUN npm run prisma:generate -w apps/api/gateway
 RUN npm run build -w apps/api/gateway
-RUN npm prune --omit=dev
 
 FROM node:20-alpine AS runner
 
@@ -38,4 +37,4 @@ COPY --from=builder /app/apps/api/gateway /app/apps/api/gateway
 
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=prisma/schema.prisma && node dist/main"]

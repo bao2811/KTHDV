@@ -60,3 +60,24 @@ rate(process_cpu_user_seconds_total[5m])
 ```bash
 docker compose -f docker-compose.monitoring.yml down
 ```
+
+Không cần chạy các container local này nếu bạn đang dùng bản đã deploy trên AWS.
+
+Hiện các container local backend đang Restarting, nghĩa là local stack của bạn đang lỗi và không liên quan trực tiếp tới AWS deploy. Nếu mục tiêu là dùng website trên AWS:
+
+http://kthdv-prod-alb-650185044.ap-southeast-1.elb.amazonaws.com
+thì bạn có thể tắt local app containers:
+
+docker compose down
+Nếu chỉ muốn dùng Grafana + Prometheus local để monitor AWS, thì chỉ chạy file monitoring:
+
+docker compose -f docker-compose.monitoring.yml up -d
+Tức là:
+
+Không cần web, gateway, postgres, redis, minio local.
+Cần prometheus và grafana local nếu bạn muốn xem dashboard trên máy.
+Prometheus local sẽ scrape AWS endpoint /api/metrics, không cần backend local chạy.
+Kiểm tra sau khi chạy monitoring:
+
+docker ps
+Bạn chỉ cần thấy recruitment-prometheus và recruitment-grafana là đủ.

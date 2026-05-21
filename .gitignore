@@ -56,3 +56,4 @@ prisma/logs
 .idea
 *.swp
 *.swo
+*.txt
