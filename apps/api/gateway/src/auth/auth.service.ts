@@ -76,7 +76,7 @@ export class AuthService {
     });
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, candidateRole.name);
 
     // Save refresh token hash
     await this.updateRefreshToken(user.id, tokens.refreshToken);
@@ -124,7 +124,7 @@ export class AuthService {
     }
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role.name);
 
     // Save refresh token hash
     await this.updateRefreshToken(user.id, tokens.refreshToken);
@@ -176,7 +176,7 @@ export class AuthService {
     }
 
     // Generate new tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role.name);
 
     // Update refresh token hash
     await this.updateRefreshToken(user.id, tokens.refreshToken);
@@ -308,7 +308,7 @@ export class AuthService {
     }
 
     // Generate tokens
-    const tokens = await this.generateTokens(user.id, user.email);
+    const tokens = await this.generateTokens(user.id, user.email, user.role.name);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
 
     // Fetch full user data for response
@@ -420,8 +420,8 @@ export class AuthService {
   // Private helpers
   // ==================
 
-  private async generateTokens(userId: number, email: string) {
-    const payload = { sub: userId, email };
+  private async generateTokens(userId: number, email: string, roleName: string) {
+    const payload = { id: userId, sub: userId, email, role: roleName };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

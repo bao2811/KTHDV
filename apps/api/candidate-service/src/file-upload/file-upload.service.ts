@@ -77,7 +77,7 @@ export class FileUploadService implements OnModuleInit {
   async uploadFile(
     file: any,
     userId: number,
-    type: 'cv' | 'avatar' = 'cv'
+    type: 'cv' | 'avatar' | 'company-logo' = 'cv'
   ): Promise<{ fileUrl: string; fileName: string; fileType: string }> {
     if (!file) {
       throw new BadRequestException('File không được gửi');
@@ -110,7 +110,12 @@ export class FileUploadService implements OnModuleInit {
       
       // Generate unique filename
       const timestamp = Date.now();
-      const prefix = type === 'cv' ? 'resumes' : 'avatars';
+      const prefix =
+        type === 'cv'
+          ? 'resumes'
+          : type === 'company-logo'
+            ? 'company-logos'
+            : 'avatars';
       const fileName = `${type}-${userId}-${timestamp}.${ext}`;
       const objectName = `${prefix}/${fileName}`;
 
@@ -147,6 +152,10 @@ export class FileUploadService implements OnModuleInit {
 
   async uploadAvatar(file: any, userId: number) {
     return this.uploadFile(file, userId, 'avatar');
+  }
+
+  async uploadCompanyLogo(file: any, userId: number) {
+    return this.uploadFile(file, userId, 'company-logo');
   }
 
   /**

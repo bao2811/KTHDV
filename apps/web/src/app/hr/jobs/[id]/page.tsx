@@ -11,6 +11,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const id = params?.id as string;
   const [job, setJob] = useState<Job | null>(null);
+  const [statistics, setStatistics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,8 +20,12 @@ export default function JobDetailPage() {
     const fetchJob = async () => {
       try {
         setLoading(true);
-        const data = await jobService.getJobById(id);
+        const [data, stats] = await Promise.all([
+          jobService.getJobById(id),
+          jobService.getJobStatistics(id).catch(() => null),
+        ]);
         setJob(data);
+        setStatistics(stats);
       } catch (err: any) {
         setError(err.message || 'Không thể tải thông tin công việc');
       } finally {
@@ -153,6 +158,23 @@ export default function JobDetailPage() {
               </div>
             </section>
           )}
+
+          {job.hardFilters && job.hardFilters.length > 0 && (
+            <section className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+              <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low flex items-center gap-stack-gap-sm">
+                <span className="material-symbols-outlined text-error">filter_alt</span>
+                <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Bo loc cung</h3>
+              </div>
+              <div className="p-stack-gap-md space-y-2">
+                {job.hardFilters.map((filter: any) => (
+                  <div key={filter.id} className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-low px-4 py-3 text-body-sm">
+                    <span className="font-semibold text-on-surface">{filter.filterType}</span>
+                    <span className="text-on-surface-variant">{filter.operator} {filter.requiredValue}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -191,6 +213,23 @@ export default function JobDetailPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+          <div className="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden">
+            <div className="p-stack-gap-md border-b border-outline-variant bg-surface-container-low">
+              <h3 className="font-label-bold text-label-bold uppercase text-on-surface">Thong ke ung tuyen</h3>
+            </div>
+            <div className="p-stack-gap-md space-y-3">
+              {Object.entries(statistics?.applicationStats || {}).length > 0 ? (
+                Object.entries(statistics.applicationStats).map(([status, count]) => (
+                  <div key={status} className="flex items-center justify-between">
+                    <span className="text-body-sm text-on-surface-variant">{status}</span>
+                    <span className="font-bold text-on-surface">{String(count)}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-body-sm text-on-surface-variant">Chua co ung vien.</p>
+              )}
             </div>
           </div>
         </aside>

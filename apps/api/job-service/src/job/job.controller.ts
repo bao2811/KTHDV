@@ -7,16 +7,34 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JobService } from './job.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CreateJobDto } from './dto/create-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
+import { CreateCompanyDto } from './dto/create-company.dto';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { CreateSkillDto } from './dto/create-skill.dto';
+import { JobQueryDto } from './dto/job-query.dto';
+import { CreateApprovalDto, RequestApprovalDto } from './dto/approval.dto';
+import { AddJobSkillDto } from './dto/add-job-skill.dto';
+import { CreateHardFilterDto } from './dto/create-hard-filter.dto';
+import { ExtendJobDto } from './dto/extend-job.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { Public } from '../auth/decorators/public.decorator';
+
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { ApplicationStatus } from '@prisma/client';
 
 @ApiTags('Jobs')
 @Controller('jobs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class JobController {
   constructor(private readonly jobService: JobService) {}
@@ -24,181 +42,254 @@ export class JobController {
   // Companies
   @ApiOperation({ summary: 'Tạo công ty mới' })
   @Post('companies')
-  createCompany(@Body() body: any) {
+  @Roles('Admin', 'HR')
+  createCompany(@Body() body: CreateCompanyDto) {
     return this.jobService.createCompany(body);
   }
 
   @ApiOperation({ summary: 'Danh sách công ty' })
   @Get('companies')
+  @Public()
   listCompanies() {
     return this.jobService.listCompanies();
   }
 
   @Get('companies/:id')
+  @Public()
   getCompany(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getCompany(id);
   }
 
+  @Put('companies/:id')
+  @Roles('Admin')
+  updateCompany(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCompanyDto>) {
+    return this.jobService.updateCompany(id, body);
+  }
+
   @Patch('companies/:id')
-  updateCompany(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  @Roles('Admin')
+  patchCompany(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCompanyDto>) {
     return this.jobService.updateCompany(id, body);
   }
 
   @Delete('companies/:id')
+  @Roles('Admin')
   deleteCompany(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteCompany(id);
   }
 
   // Locations
   @Post('locations')
-  createLocation(@Body() body: any) {
+  @Roles('Admin', 'HR')
+  createLocation(@Body() body: CreateLocationDto) {
     return this.jobService.createLocation(body);
   }
 
   @Get('locations')
+  @Public()
   listLocations() {
     return this.jobService.listLocations();
   }
 
   @Get('locations/:id')
+  @Public()
   getLocation(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getLocation(id);
   }
 
+  @Put('locations/:id')
+  @Roles('Admin')
+  updateLocation(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateLocationDto>) {
+    return this.jobService.updateLocation(id, body);
+  }
+
   @Patch('locations/:id')
-  updateLocation(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  @Roles('Admin')
+  patchLocation(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateLocationDto>) {
     return this.jobService.updateLocation(id, body);
   }
 
   @Delete('locations/:id')
+  @Roles('Admin')
   deleteLocation(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteLocation(id);
   }
 
   // Categories
   @Post('categories')
-  createCategory(@Body() body: any) {
+  @Roles('Admin', 'HR')
+  createCategory(@Body() body: CreateCategoryDto) {
     return this.jobService.createCategory(body);
   }
 
   @Get('categories')
+  @Public()
   listCategories() {
     return this.jobService.listCategories();
   }
 
   @Get('categories/:id')
+  @Public()
   getCategory(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getCategory(id);
   }
 
+  @Put('categories/:id')
+  @Roles('Admin')
+  updateCategory(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCategoryDto>) {
+    return this.jobService.updateCategory(id, body);
+  }
+
   @Patch('categories/:id')
-  updateCategory(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  @Roles('Admin')
+  patchCategory(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateCategoryDto>) {
     return this.jobService.updateCategory(id, body);
   }
 
   @Delete('categories/:id')
+  @Roles('Admin')
   deleteCategory(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteCategory(id);
   }
 
   // Skills
   @Post('skills')
-  createSkill(@Body() body: any) {
+  @Roles('Admin', 'HR')
+  createSkill(@Body() body: CreateSkillDto) {
     return this.jobService.createSkill(body);
   }
 
   @Get('skills')
+  @Public()
   listSkills() {
     return this.jobService.listSkills();
   }
 
   @Get('skills/:id')
+  @Public()
   getSkill(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getSkill(id);
   }
 
+  @Put('skills/:id')
+  @Roles('Admin')
+  updateSkill(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateSkillDto>) {
+    return this.jobService.updateSkill(id, body);
+  }
+
   @Patch('skills/:id')
-  updateSkill(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  @Roles('Admin')
+  patchSkill(@Param('id', ParseIntPipe) id: number, @Body() body: Partial<CreateSkillDto>) {
     return this.jobService.updateSkill(id, body);
   }
 
   @Delete('skills/:id')
+  @Roles('Admin')
   deleteSkill(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteSkill(id);
   }
 
-  // Jobs
-  @ApiOperation({ summary: 'Tạo tin tuyển dụng mới' })
-  @Post('jobs')
-  createJob(@Body() body: any) {
-    return this.jobService.createJob(body);
+  // Approvals (Special routes - MUST be above :id)
+  @ApiOperation({ summary: 'Lấy danh sách tất cả yêu cầu duyệt đang chờ' })
+  @Get('approvals')
+  @Roles('Manager', 'Admin')
+  getPendingApprovals() {
+    return this.jobService.getAllApprovals();
   }
 
-  @ApiOperation({ summary: 'Danh sách tin tuyển dụng (kèm bộ lọc)' })
-  @Get('jobs')
-  listJobs(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-    @Query('status') status?: string,
-    @Query('companyId') companyId?: string,
-    @Query('categoryId') categoryId?: string,
-    @Query('locationId') locationId?: string,
-    @Query('search') search?: string,
-    @Query('jobType') jobType?: 'FULL_TIME' | 'PART_TIME' | 'REMOTE',
-    @Query('salaryMin') salaryMin?: string,
-    @Query('salaryMax') salaryMax?: string,
-  ) {
-    return this.jobService.listJobs({
-      page: page ? parseInt(page, 10) : undefined,
-      limit: limit ? parseInt(limit, 10) : undefined,
-      status,
-      companyId: companyId ? parseInt(companyId, 10) : undefined,
-      categoryId: categoryId ? parseInt(categoryId, 10) : undefined,
-      locationId: locationId ? parseInt(locationId, 10) : undefined,
-      search,
-      jobType,
-      salaryMin: salaryMin ? parseFloat(salaryMin) : undefined,
-      salaryMax: salaryMax ? parseFloat(salaryMax) : undefined,
+  // Jobs
+  @ApiOperation({ summary: 'Tạo tin tuyển dụng mới' })
+  @Post()
+  @Roles('HR', 'Admin')
+  createJob(@Body() body: CreateJobDto, @CurrentUser() user: any) {
+    return this.jobService.createJob({
+      ...body,
+      createdByUserId: user?.id,
+      createdByRole: user?.role,
     });
   }
 
-  @Get('jobs/:id')
+  @ApiOperation({ summary: 'Danh sách tin tuyển dụng (kèm bộ lọc)' })
+  @Get()
+  @Public()
+  listJobs(@Query() query: JobQueryDto) {
+    return this.jobService.listJobs(query);
+  }
+
+  @Get(':id')
+  @Public()
   getJob(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getJob(id);
   }
 
-  @Patch('jobs/:id')
-  updateJob(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-    return this.jobService.updateJob(id, body);
+  @Patch(':id')
+  @Roles('HR', 'Admin')
+  updateJob(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateJobDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.jobService.updateJob(id, body, user);
   }
 
-  @Delete('jobs/:id')
+  @Delete(':id')
+  @Roles('HR', 'Admin')
   deleteJob(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.deleteJob(id);
   }
 
-  @Post('jobs/:id/approvals')
-  createApproval(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
-    return this.jobService.createApproval(id, body);
+  @ApiOperation({ summary: 'Đóng tin tuyển dụng' })
+  @Patch(':id/close')
+  @Roles('HR', 'Admin')
+  closeJob(@Param('id', ParseIntPipe) id: number) {
+    return this.jobService.closeJob(id);
   }
 
-  @Get('jobs/:id/approvals')
+  @ApiOperation({ summary: 'Gia hạn tin tuyển dụng' })
+  @Patch(':id/extend')
+  @Roles('HR', 'Admin')
+  extendJob(@Param('id', ParseIntPipe) id: number, @Body() body: ExtendJobDto) {
+    return this.jobService.extendJob(id, body.expiredAt);
+  }
+
+  @ApiOperation({ summary: 'Gửi yêu cầu duyệt tin' })
+  @Post(':id/approvals')
+  @Roles('HR', 'Admin')
+  requestApproval(@Param('id', ParseIntPipe) id: number, @Body() body: RequestApprovalDto) {
+    return this.jobService.requestApproval(id, body?.reviewerId);
+  }
+
+  @ApiOperation({ summary: 'Duyệt hoặc từ chối tin' })
+  @Patch(':id/approvals/:approvalId')
+  @Roles('Manager', 'Admin')
+  approveJob(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('approvalId', ParseIntPipe) approvalId: number,
+    @Body() body: CreateApprovalDto,
+  ) {
+    return this.jobService.updateApproval(id, approvalId, body);
+  }
+
+  @Get(':id/approvals')
+  @Roles('HR', 'Manager', 'Admin')
   getApprovals(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.getApprovals(id);
   }
 
   // Job Skills
-  @Post('jobs/:jobId/skills')
-  addJobSkill(@Param('jobId', ParseIntPipe) jobId: number, @Body() body: any) {
+  @Post(':jobId/skills')
+  @Roles('HR', 'Admin')
+  addJobSkill(@Param('jobId', ParseIntPipe) jobId: number, @Body() body: AddJobSkillDto) {
     return this.jobService.addJobSkill(jobId, body);
   }
 
-  @Get('jobs/:jobId/skills')
+  @Get(':jobId/skills')
   listJobSkills(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.jobService.listJobSkills(jobId);
   }
 
-  @Delete('jobs/:jobId/skills/:skillId')
+  @Delete(':jobId/skills/:skillId')
+  @Roles('HR', 'Admin')
   removeJobSkill(
     @Param('jobId', ParseIntPipe) jobId: number,
     @Param('skillId', ParseIntPipe) skillId: number,
@@ -207,26 +298,30 @@ export class JobController {
   }
 
   // Hard Filters
-  @Post('jobs/:jobId/hard-filters')
+  @ApiOperation({ summary: 'Thêm bộ lọc cứng' })
+  @Post(':jobId/hard-filters')
+  @Roles('HR', 'Admin')
   addHardFilter(
     @Param('jobId', ParseIntPipe) jobId: number,
-    @Body() body: any,
+    @Body() body: CreateHardFilterDto,
   ) {
     return this.jobService.addHardFilter(jobId, body);
   }
 
-  @Get('jobs/:jobId/hard-filters')
+  @Get(':jobId/hard-filters')
   listHardFilters(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.jobService.listHardFilters(jobId);
   }
 
   @Delete('hard-filters/:id')
+  @Roles('HR', 'Admin')
   removeHardFilter(@Param('id', ParseIntPipe) id: number) {
     return this.jobService.removeHardFilter(id);
   }
 
   // Applications
-  @Get('jobs/:jobId/applications')
+  @Get(':jobId/applications')
+  @Roles('HR', 'Admin', 'Manager')
   getJobApplications(
     @Param('jobId', ParseIntPipe) jobId: number,
     @Query('status') status?: string,
@@ -240,8 +335,20 @@ export class JobController {
     });
   }
 
+  @Patch('applications/:applicationId/status')
+  @Roles('HR', 'Admin', 'Manager')
+  @ApiOperation({ summary: 'Cập nhật trạng thái ứng tuyển' })
+  updateApplicationStatus(
+    @Param('applicationId', ParseIntPipe) applicationId: number,
+    @Body('status') status: ApplicationStatus,
+    @CurrentUser('id') userId: number,
+  ) {
+    return this.jobService.updateApplicationStatus(applicationId, status, userId);
+  }
+
   // Statistics
-  @Get('jobs/:jobId/statistics')
+  @Get(':jobId/statistics')
+  @Roles('HR', 'Admin', 'Manager')
   getJobStatistics(@Param('jobId', ParseIntPipe) jobId: number) {
     return this.jobService.getJobStatistics(jobId);
   }

@@ -6,15 +6,35 @@ import { IServiceProxy } from '../interfaces/service-proxy.interface';
 /**
  * HTTP Implementation of Service Proxy
  * Used during development to forward requests to microservices
- *
- * To migrate to RabbitMQ:
- * 1. Create HttpProxyService.rabbitmq.ts
- * 2. Replace service providers in proxy.module.ts
- * 3. Update SERVICE_PROXY token to use RabbitMQ implementation
  */
 @Injectable()
 export class HttpProxyService implements IServiceProxy {
   constructor(private httpService: HttpService) {}
+
+  private handleError(error: any, method: string): never {
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      // that falls out of the range of 2xx
+      const status = error.response.status;
+      const data = error.response.data;
+      throw new HttpException(
+        data || `HTTP ${method} failed with status ${status}`,
+        status,
+      );
+    } else if (error.request) {
+      // The request was made but no response was received
+      throw new HttpException(
+        `Service unavailable: No response from microservice during ${method}`,
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    } else {
+      // Something happened in setting up the request that triggered an Error
+      throw new HttpException(
+        `Proxy error during ${method}: ${error.message}`,
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
 
   async get<T = any>(url: string, config?: any): Promise<T> {
     try {
@@ -30,9 +50,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.message || error.message;
-      throw new HttpException(`HTTP GET failed: ${message}`, status);
+      this.handleError(error, 'GET');
     }
   }
 
@@ -50,9 +68,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.message || error.message;
-      throw new HttpException(`HTTP POST failed: ${message}`, status);
+      this.handleError(error, 'POST');
     }
   }
 
@@ -70,9 +86,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.message || error.message;
-      throw new HttpException(`HTTP PATCH failed: ${message}`, status);
+      this.handleError(error, 'PATCH');
     }
   }
 
@@ -90,9 +104,7 @@ export class HttpProxyService implements IServiceProxy {
       );
       return response.data;
     } catch (error: any) {
-      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.message || error.message;
-      throw new HttpException(`HTTP DELETE failed: ${message}`, status);
+      this.handleError(error, 'DELETE');
     }
   }
 
@@ -106,15 +118,12 @@ export class HttpProxyService implements IServiceProxy {
           'ngrok-skip-browser-warning': 'true',
         },
       };
-      // For streaming, we need the full response object
       const response = await firstValueFrom(
         this.httpService.get(url, mergedConfig),
       );
       return response;
     } catch (error: any) {
-      const status = error.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
-      const message = error.response?.data?.message || error.message;
-      throw new HttpException(`HTTP STREAM failed: ${message}`, status);
+      this.handleError(error, 'STREAM');
     }
   }
 }
